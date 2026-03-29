@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gu&iacute;as TFE &mdash; M&aacute;ster en Inteligencia Artificial &mdash; UNIR</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #3b82f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Header ── */
+  .header {
+    width: 100%;
+    max-width: 720px;
+    padding: 3rem 1.5rem 1.5rem;
+    text-align: center;
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: .4rem;
+    letter-spacing: -.02em;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header p {
+    font-size: .92rem;
+    color: var(--muted);
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 1.55;
+  }
+
+  /* ── Cards grid ── */
+  .cards {
+    width: 100%;
+    max-width: 720px;
+    padding: 1rem 1.5rem 3rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  @media (max-width: 640px) {
+    .cards { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    text-decoration: none;
+    color: var(--text);
+    transition: all .2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+    border-color: #475569;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .card[data-color="blue"]::before { background: #3b82f6; }
+  .card[data-color="violet"]::before { background: #8b5cf6; }
+  .card[data-color="cyan"]::before { background: #0ea5e9; }
+  .card[data-color="amber"]::before { background: #f59e0b; }
+
+  .card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .card[data-color="blue"] .card-icon { background: rgba(59,130,246,.15); color: #60a5fa; }
+  .card[data-color="violet"] .card-icon { background: rgba(139,92,246,.15); color: #a78bfa; }
+  .card[data-color="cyan"] .card-icon { background: rgba(14,165,233,.15); color: #38bdf8; }
+  .card[data-color="amber"] .card-icon { background: rgba(245,158,11,.15); color: #fbbf24; }
+
+  .card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  .card-desc {
+    font-size: .82rem;
+    color: var(--muted);
+    line-height: 1.5;
+    flex: 1;
+  }
+  .card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: .15rem;
+  }
+  .card-badge {
+    font-size: .68rem;
+    font-weight: 600;
+    padding: .15rem .5rem;
+    border-radius: 5px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .card[data-color="blue"] .card-badge { background: rgba(59,130,246,.15); color: #60a5fa; }
+  .card[data-color="violet"] .card-badge { background: rgba(139,92,246,.15); color: #a78bfa; }
+  .card[data-color="cyan"] .card-badge { background: rgba(14,165,233,.15); color: #38bdf8; }
+  .card[data-color="amber"] .card-badge { background: rgba(245,158,11,.15); color: #fbbf24; }
+
+  .card-arrow {
+    font-size: 1rem;
+    color: #475569;
+    transition: all .15s;
+  }
+  .card:hover .card-arrow { transform: translateX(4px); }
+  .card[data-color="blue"]:hover .card-arrow { color: #60a5fa; }
+  .card[data-color="violet"]:hover .card-arrow { color: #a78bfa; }
+  .card[data-color="cyan"]:hover .card-arrow { color: #38bdf8; }
+  .card[data-color="amber"]:hover .card-arrow { color: #fbbf24; }
+
+  /* ── Footer ── */
+  footer {
+    margin-top: auto;
+    text-align: center;
+    padding: 1.5rem;
+    font-size: .75rem;
+    color: #475569;
+    border-top: 1px solid var(--border);
+    width: 100%;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Gu&iacute;as TFE Interactivas</h1>
+  <p>Toda la documentaci&oacute;n del Trabajo Fin de Estudios del M&aacute;ster en Inteligencia Artificial, resumida y accesible en un clic.</p>
+</div>
+
+<div class="cards">
+
+  <a href="rubrica.html" class="card" data-color="blue">
+    <div class="card-icon">&#9776;</div>
+    <div class="card-title">R&uacute;brica de evaluaci&oacute;n</div>
+    <div class="card-desc">Los 8 criterios que usar&aacute; el tribunal para calificar tu TFE, con los 4 niveles de cada uno (Suspenso a Sobresaliente) y consejos pr&aacute;cticos.</div>
+    <div class="card-meta">
+      <span class="card-badge">8 criterios</span>
+      <span class="card-arrow">&rarr;</span>
+    </div>
+  </a>
+
+  <a href="instrucciones.html" class="card" data-color="violet">
+    <div class="card-icon">&#9997;</div>
+    <div class="card-title">Instrucciones de elaboraci&oacute;n</div>
+    <div class="card-desc">C&oacute;mo redactar tu TFE: l&iacute;nea de discurso, estructura de cap&iacute;tulos, formatos, plantilla, estilo acad&eacute;mico y normativa APA.</div>
+    <div class="card-meta">
+      <span class="card-badge">13 secciones</span>
+      <span class="card-arrow">&rarr;</span>
+    </div>
+  </a>
+
+  <a href="reglamento.html" class="card" data-color="cyan">
+    <div class="card-icon">&#9878;</div>
+    <div class="card-title">Reglamento TFG/TFM</div>
+    <div class="card-desc">Normativa oficial: matr&iacute;cula, convocatorias, plagio, defensa, calificaciones, reclamaciones y matr&iacute;cula de honor.</div>
+    <div class="card-meta">
+      <span class="card-badge">11 art&iacute;culos</span>
+      <span class="card-arrow">&rarr;</span>
+    </div>
+  </a>
+
+  <a href="guia.html" class="card" data-color="amber">
+    <div class="card-icon">&#9733;</div>
+    <div class="card-title">Gu&iacute;a del TFE</div>
+    <div class="card-desc">El proceso paso a paso: propuesta, tipos de trabajo, entregas, el director, preparaci&oacute;n de la defensa y calificaci&oacute;n.</div>
+    <div class="card-meta">
+      <span class="card-badge">3 fases &middot; 13 secciones</span>
+      <span class="card-arrow">&rarr;</span>
+    </div>
+  </a>
+
+</div>
+
+<footer>
+  M&aacute;ster Universitario en Inteligencia Artificial &mdash; <a href="https://www.unir.net" target="_blank">Universidad Internacional de La Rioja (UNIR)</a>
+  <br>Herramienta orientativa de consulta para estudiantes. No sustituye la documentaci&oacute;n oficial.
+</footer>
+
+</body>
+</html>

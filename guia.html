@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía del TFE — UNIR</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #f59e0b;
+    --accent2: #fcd34d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+  }
+  .menu {
+    width: 340px;
+    flex-shrink: 0;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+  .menu-header {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .menu-header h1 {
+    font-size: 1.45rem;
+    font-weight: 800;
+    margin-bottom: .25rem;
+    background: linear-gradient(135deg, #fcd34d, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .menu-header p {
+    font-size: .82rem;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+  .menu-items {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .cat-label {
+    padding: .5rem 1.5rem;
+    font-size: .65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted);
+    background: rgba(255,255,255,.02);
+    border-bottom: 1px solid var(--border);
+  }
+  .menu-btn {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    width: 100%;
+    padding: .7rem 1.5rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text);
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    transition: all .12s;
+    font-family: inherit;
+  }
+  .menu-btn:hover { background: rgba(255,255,255,.05); }
+  .menu-btn.active {
+    background: rgba(245,158,11,.12);
+    border-left: 4px solid var(--accent);
+  }
+  .menu-btn .btn-num {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    background: rgba(255,255,255,.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .72rem;
+    font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: all .12s;
+  }
+  .menu-btn.active .btn-num { background: var(--accent); color: #1e293b; }
+  .menu-btn .btn-text { flex: 1; min-width: 0; }
+  .menu-btn .btn-name { font-size: .88rem; font-weight: 600; display: block; line-height: 1.3; }
+  .menu-btn .btn-sub { font-size: .68rem; color: var(--muted); display: block; line-height: 1.3; margin-top: .1rem; }
+  .menu-btn .btn-arrow { color: var(--muted); font-size: .8rem; flex-shrink: 0; opacity: 0; transition: opacity .1s; }
+  .menu-btn:hover .btn-arrow, .menu-btn.active .btn-arrow { opacity: 1; }
+  .menu-download {
+    padding: .6rem 1.5rem;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .menu-download a {
+    display: flex; align-items: center; justify-content: center; gap: .5rem;
+    padding: .5rem; background: rgba(255,255,255,.06); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted); text-decoration: none; font-size: .78rem;
+    font-weight: 500; transition: all .12s;
+  }
+  .menu-download a:hover { background: rgba(255,255,255,.1); color: var(--text); }
+
+  .panel {
+    flex: 1; display: none; flex-direction: column; min-width: 0;
+    background: var(--bg); animation: slideIn .25s ease;
+  }
+  body.panel-open .panel { display: flex; }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+
+  .panel-header {
+    padding: 1.25rem 2.5rem .75rem; flex-shrink: 0;
+    display: flex; align-items: baseline; gap: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-header h2 { font-size: 1.6rem; font-weight: 800; }
+  .panel-header .p-cat { font-size: .8rem; color: var(--muted); margin-left: auto; }
+  .panel-header .close-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    width: 30px; height: 30px; border-radius: 6px; cursor: pointer; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center; transition: all .1s;
+    font-family: inherit; flex-shrink: 0;
+  }
+  .panel-header .close-btn:hover { background: rgba(255,255,255,.08); color: white; }
+
+  .panel-body {
+    flex: 1; overflow-y: auto; padding: 1.25rem 2.5rem 2rem;
+    display: flex; flex-direction: column; gap: 1rem;
+  }
+  .block {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1rem 1.5rem; flex: 1; display: flex; flex-direction: column; justify-content: center;
+  }
+  .block h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .5rem; color: var(--accent2); }
+  .block p, .block li { font-size: 1rem; color: #cbd5e1; line-height: 1.7; }
+  .block ul, .block ol { padding-left: 1.5rem; display: flex; flex-direction: column; gap: .35rem; }
+  .block li::marker { color: var(--accent); }
+  .block-tip { background: rgba(245,158,11,.08); border-left: 4px solid var(--accent); }
+  .block-tip p { color: var(--accent2); }
+  .block-warn { background: rgba(239,68,68,.08); border-left: 4px solid #ef4444; }
+  .block-warn p { color: #fca5a5; }
+  .block-info { background: rgba(59,130,246,.08); border-left: 4px solid #3b82f6; }
+  .block-info p { color: #93c5fd; }
+  .block-heading { background: transparent; border: none; padding: .35rem 0 0; flex: 0; }
+
+  .panel-footer {
+    flex-shrink: 0; padding: .5rem 2.5rem;
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--border);
+  }
+  .panel-nav {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: .3rem .7rem; border-radius: 6px; font-size: .8rem; cursor: pointer;
+    transition: all .1s; font-family: inherit;
+  }
+  .panel-nav:hover { background: rgba(255,255,255,.06); color: white; }
+  .panel-nav:disabled { opacity: .2; cursor: default; }
+  .panel-nav:disabled:hover { background: none; color: var(--muted); }
+  .panel-counter { font-size: .75rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="menu" id="menu"></div>
+<div class="panel" id="panel"></div>
+<script>
+const DATA = [
+  {
+    cat: "Presentación",
+    items: [
+      {
+        name: "Qué es el TFE",
+        sub: "Definición, carga lectiva, modalidades individual/grupal",
+        content: [
+          { type: "p", text: "El TFE es el <strong>último paso para obtener la titulación</strong>. Un trabajo inédito y original donde aplicas los conocimientos adquiridos en el máster. Carga lectiva de <strong>12 ECTS</strong>, bajo supervisión de un director asignado." },
+          { type: "ul", items: [
+            "Se puede realizar de forma <strong>individual o grupal</strong> (grupos de 2-3 miembros)",
+            "Implica una <strong>defensa ante comisión evaluadora</strong> que debe ser superada",
+            "En la calificación final de la titulación, pondera proporcionalmente a sus ECTS",
+            "En el Máster en IA, el trabajo se centra en <strong>investigación de técnicas de IA</strong> y/o desarrollo de soluciones basadas en métodos de IA"
+          ]},
+          { type: "tip", text: "La dedicación es la misma tanto para TFE individual como grupal. El trabajo grupal <strong>no reduce</strong> la dedicación respecto al individual." }
+        ]
+      },
+      {
+        name: "Antes de empezar",
+        sub: "Competencias transversales y documentos que debes consultar",
+        content: [
+          { type: "h3", text: "Documentos imprescindibles" },
+          { type: "ul", items: [
+            "<strong>Reglamento de TFG y TFM</strong> de UNIR — directrices generales",
+            "<strong>Protocolo TFE grupal</strong> — si eliges esa opción",
+            "<strong>Solicitud de tema de TFE</strong> — completar y enviar en plazo",
+            "<strong>Rúbrica de evaluación</strong> — la usa la comisión para calificarte",
+            "<strong>Plantilla de elaboración</strong> — usar desde el primer momento",
+            "<strong>Instrucciones para la elaboración</strong> — indicaciones de contenido"
+          ]},
+          { type: "h3", text: "Competencias transversales" },
+          { type: "ul", items: [
+            "Gestionar la información: diferenciar entre citar, parafrasear y copiar",
+            "Buscar y seleccionar bibliografía",
+            "Citar y referenciar correctamente",
+            "Conocer errores frecuentes de ortografía, puntuación y gramática",
+            "Redactar textos académicos",
+            "Utilizar herramientas ofimáticas (Word, PowerPoint)"
+          ]},
+          { type: "info", text: "En el aula virtual hay sesiones en directo (también en diferido) sobre estas competencias, impartidas por expertos en cada ámbito." }
+        ]
+      },
+      {
+        name: "Las tres fases del TFE",
+        sub: "Visión general del proceso de principio a fin",
+        content: [
+          { type: "h3", text: "Fase 1 — Preparación de la propuesta" },
+          { type: "p", text: "Preparas y envías la solicitud de tema. Tienes libertad para elegir el tema que te motive. Una vez aprobada la propuesta y asignado el director, <strong>no puedes cambiar de tema</strong>." },
+          { type: "h3", text: "Fase 2 — Elaboración del TFE" },
+          { type: "p", text: "La fase más prolongada. Desarrollas el trabajo bajo la dirección del director asignado. Debes prestar especial atención a las <strong>entregas dentro del plazo</strong> indicado." },
+          { type: "h3", text: "Fase 3 — Depósito, autorización y defensa" },
+          { type: "p", text: "Culminación del trabajo. Una vez finalizado y autorizado por tu director, lo depositas y procedes a la <strong>defensa ante comisión evaluadora</strong>. Tu director NO califica; lo hace la comisión." }
+        ]
+      }
+    ]
+  },
+  {
+    cat: "Fase 1 — Propuesta",
+    items: [
+      {
+        name: "Solicitud de tema",
+        sub: "Qué debe contener tu propuesta y recomendaciones",
+        content: [
+          { type: "h3", text: "Contenido obligatorio de la propuesta" },
+          { type: "ul", items: [
+            "Elegir TFE <strong>individual o grupal</strong>",
+            "En grupal: miembros del grupo + compromiso grupal firmado",
+            "Tus datos personales y de contacto",
+            "<strong>Título provisional</strong> — máximo 12-15 palabras, que sintetice la aportación fundamental",
+            "<strong>Tipo de trabajo</strong> — piloto experimental, desarrollo software, comparativa o Red Proyectum",
+            "<strong>Líneas de trabajo</strong> relacionadas con la propuesta",
+            "<strong>Descripción de la aportación</strong> — justifica su novedad, con bibliografía",
+            "Origen o fuentes de los <strong>datos</strong> que usarás",
+            "Cuestionario específico según el tipo de trabajo elegido"
+          ]},
+          { type: "tip", text: "No sientas presión. Busca un tema que te <strong>motive</strong> y que no sea demasiado complicado. Es un TFE, no una tesis doctoral. Elige algo concreto, los temas genéricos no son abordables." }
+        ]
+      },
+      {
+        name: "Tipos de trabajo",
+        sub: "Las 4 modalidades: piloto, desarrollo software, comparativa y Red Proyectum",
+        content: [
+          { type: "h3", text: "Tipo 1 — Piloto experimental" },
+          { type: "p", text: "Diseñar y desarrollar una experiencia real con usuarios/datos reales, empleando técnicas de IA, con <strong>análisis estadístico de resultados</strong>. Debe responder a preguntas de investigación planteadas a priori." },
+          { type: "h3", text: "Tipo 2 — Desarrollo software" },
+          { type: "p", text: "Proporcionar una <strong>solución tecnológica específica</strong> mediante desarrollo/adaptación de software. Se espera validación con pruebas de usabilidad. Debes poder hacer una <strong>demostración práctica</strong>." },
+          { type: "h3", text: "Tipo 3 — Comparativa de soluciones" },
+          { type: "p", text: "Investigar distintas alternativas para una misma tarea mediante <strong>análisis empírico</strong>. No es una comparativa teórica a priori, sino experimental basada en datos concretos." },
+          { type: "h3", text: "Tipo 4 — Red Proyectum" },
+          { type: "p", text: "Proyectos reales de empresa. Siempre <strong>grupal</strong>. Al finalizar recibes un certificado de participación en el programa." }
+        ]
+      },
+      {
+        name: "Líneas de trabajo",
+        sub: "Las 5 líneas temáticas del Máster en IA",
+        content: [
+          { type: "ul", items: [
+            "<strong>Línea 1:</strong> Visión Artificial",
+            "<strong>Línea 2:</strong> Razonamiento y planificación automática",
+            "<strong>Línea 3:</strong> Aprendizaje automático",
+            "<strong>Línea 4:</strong> Aprendizaje profundo",
+            "<strong>Línea 5:</strong> Procesamiento del lenguaje natural"
+          ]},
+          { type: "tip", text: "Puedes elegir <strong>una o varias</strong> líneas. Piensa cuáles de los contenidos estudiados te interesa trabajar con mayor profundidad." }
+        ]
+      }
+    ]
+  },
+  {
+    cat: "Fase 2 — Elaboración",
+    items: [
+      {
+        name: "El director del TFE",
+        sub: "Qué hace, qué NO hace, y cómo comunicarte con él",
+        content: [
+          { type: "h3", text: "Tu director SÍ..." },
+          { type: "ul", items: [
+            "<strong>Dirige y orienta</strong> — búsqueda de bibliografía, aspectos a profundizar, indicaciones de mejora, fallos de citación",
+            "<strong>Valora el grado de avance</strong> — revisa entregas y da feedback",
+            "<strong>Autoriza el depósito y defensa</strong> — valora el documento completo y da orientaciones para la defensa"
+          ]},
+          { type: "h3", text: "Tu director NO..." },
+          { type: "ul", items: [
+            "<strong>No es coautor</strong> — no proporciona fuentes, no escribe, no corrige ortografía, no elabora párrafos ni gráficos",
+            "<strong>No evalúa el TFE</strong> — no pone nota, eso lo hace la comisión evaluadora",
+            "No es responsable del plagio aunque no lo haya advertido",
+            "No es responsable de cómo hagas la defensa"
+          ]},
+          { type: "warn", text: "Si el director no da el visto bueno al depósito, <strong>fíate de su criterio</strong>. Es mejor no proseguir si el resultado previsible ante la comisión es negativo." }
+        ]
+      },
+      {
+        name: "Comunicación y mentor",
+        sub: "Canales con el director, sesiones individuales y rol del mentor",
+        content: [
+          { type: "h3", text: "Canales de comunicación con el director" },
+          { type: "ul", items: [
+            "<strong>Envío de entregas</strong> — puedes incluir consultas en el documento o en el propio envío",
+            "<strong>Correo interno del aula virtual</strong> — para asuntos de contenido del TFE",
+            "<strong>4 sesiones individuales en directo</strong> — una al inicio + una después de cada entrega parcial"
+          ]},
+          { type: "info", text: "Si no asistes a una sesión confirmada <strong>en dos ocasiones</strong>, se considera perdida." },
+          { type: "h3", text: "El mentor" },
+          { type: "p", text: "Tu mentor te ayuda con <strong>cuestiones administrativas y técnicas</strong>: envío de entregas, depósito, logística de la defensa, solicitudes. <strong>No da pautas</strong> para la elaboración del TFE ni flexibiliza plazos." }
+        ]
+      },
+      {
+        name: "Entregas y actividades",
+        sub: "Las 3 entregas parciales, predepósito, originalidad y uso de IA",
+        content: [
+          { type: "h3", text: "Primera entrega" },
+          { type: "p", text: "Primeros avances: <strong>análisis del contexto + estado del arte + bibliografía + objetivos claros</strong>. Ayuda al director a conocer tu estilo y nivel." },
+          { type: "h3", text: "Segunda entrega" },
+          { type: "p", text: "Avance cuantitativo y cualitativo. Debe verse un <strong>importante avance en la contribución</strong> y demostrar que los objetivos son realistas y alcanzables." },
+          { type: "h3", text: "Tercera entrega" },
+          { type: "p", text: "Trabajo <strong>finalizado con todos los capítulos</strong>. Conclusiones e introducción se suelen escribir aquí. A partir de este punto, solo ajustes menores." },
+          { type: "h3", text: "Predepósito" },
+          { type: "p", text: "Documento final <strong>tal cual quedará depositado</strong>. Una vez entregado, no se permite ninguna modificación." },
+          { type: "warn", text: "No realizar entregas o que sean <strong>no aptas</strong> puede suponer la no autorización del depósito. Si el avance es insuficiente, puede que no sea viable ni en convocatoria extraordinaria." }
+        ]
+      },
+      {
+        name: "Originalidad y uso de IA",
+        sub: "Herramientas anti-plagio, uso de IA generativa y consecuencias",
+        content: [
+          { type: "ul", items: [
+            "Tu trabajo debe ser <strong>inédito y original</strong>. Cada entrega se revisa con herramientas anti-plagio",
+            "El director te avisará si detecta problemas, pero <strong>tú debes demostrar la autoría</strong>"
+          ]},
+          { type: "warn", text: "Se <strong>desaconseja completamente</strong> el uso de herramientas de IA para elaborar el trabajo. Si las usas: el director debe validar su uso, debe quedar explícitamente reflejado y citado según normas APA. Un uso inadecuado puede provocar la <strong>NO AUTORIZACIÓN</strong> y pérdida de convocatoria." },
+          { type: "tip", text: "Haz <strong>copias de seguridad</strong> frecuentes (disco externo, nube, email). Se han dado casos de pérdida del documento cerca de la entrega." }
+        ]
+      }
+    ]
+  },
+  {
+    cat: "Fase 3 — Defensa",
+    items: [
+      {
+        name: "Depósito y autorización",
+        sub: "El proceso de depósito y la decisión del director",
+        content: [
+          { type: "ol", items: [
+            "Tu director revisa la entrega de predepósito y decide si da el <strong>visto bueno</strong>",
+            "Depositas el <strong>mismo documento</strong> que enviaste en predepósito",
+            "El director autoriza (o no) el depósito, subiendo una autorización individual",
+            "La fecha límite de depósito es <strong>inamovible</strong>"
+          ]},
+          { type: "tip", text: "No apures el plazo de depósito. Consúltalo en el aula virtual y en el calendario de tu promoción. Si tienes dudas, pregunta a tu mentor." }
+        ]
+      },
+      {
+        name: "Preparación de la defensa",
+        sub: "Tiempo, formato de presentación y consejos prácticos",
+        content: [
+          { type: "h3", text: "Tiempo de presentación" },
+          { type: "ul", items: [
+            "<strong>TFE individual:</strong> máximo 15 minutos (recomendado 10)",
+            "<strong>TFE grupal (3 personas):</strong> máximo 10 min por persona",
+            "<strong>TFE grupal (2 personas):</strong> máximo 15 min por persona",
+            "Total grupal: no exceder 30 minutos (recomendado 25)"
+          ]},
+          { type: "h3", text: "Consejos" },
+          { type: "ul", items: [
+            "Céntrate en los <strong>aspectos más relevantes</strong> del trabajo",
+            "Usa <strong>estilo y formato agradables</strong>, sin abusar del texto",
+            "Apóyate en <strong>elementos visuales</strong> (diagramas, figuras, gráficos)",
+            "Prepara la presentación también en <strong>PDF</strong> por si hay problemas de compatibilidad"
+          ]}
+        ]
+      },
+      {
+        name: "El acto de defensa",
+        sub: "Cuándo, dónde, cómo comportarte y qué se espera de ti",
+        content: [
+          { type: "h3", text: "Cuándo y dónde" },
+          { type: "ul", items: [
+            "Entre <strong>30 y 90 días</strong> después del depósito",
+            "Recibirás la cita con al menos <strong>10 días naturales</strong> de antelación",
+            "Se realiza en una <strong>sala virtual</strong> (defensa online, grabada)"
+          ]},
+          { type: "h3", text: "Cómo comportarte" },
+          { type: "ul", items: [
+            "<strong>Atuendo:</strong> formal pero sencillo. Evita ropa sport o demasiado informal",
+            "<strong>Lenguaje verbal:</strong> dirígete a la comisión de usted, no interrumpas, evita lo coloquial",
+            "<strong>Lenguaje corporal:</strong> relajado pero seguro, no leas un discurso aprendido",
+            "<strong>Contacto visual:</strong> mira a la cámara, no a la presentación"
+          ]},
+          { type: "h3", text: "Qué se espera" },
+          { type: "ul", items: [
+            "Muestra <strong>dominio del contenido</strong> y que la autoría es tuya",
+            "Demuestra <strong>capacidad de síntesis</strong>, no resumas todo",
+            "Tras la exposición: <strong>turno de preguntas</strong> (el acto puede durar hasta 2 horas)"
+          ]},
+          { type: "warn", text: "Un <strong>suspenso en exposición</strong> (no alcanzar el 50% de la rúbrica en defensa) supone el <strong>suspenso inmediato</strong> del TFE, al no demostrarse autoría suficiente." },
+          { type: "p", text: "No olvides llevar: tu <strong>presentación</strong> y tu <strong>documento de identidad</strong> (DNI o pasaporte)." }
+        ]
+      },
+      {
+        name: "Calificación y convocatoria extraordinaria",
+        sub: "Cómo se califica, la escala de notas y qué pasa si no apruebas",
+        content: [
+          { type: "h3", text: "Calificación" },
+          { type: "p", text: "La comisión delibera a puerta cerrada con la rúbrica. Valora: <strong>Estructura</strong> (20%), <strong>Contenido</strong> (50%) y <strong>Exposición</strong> (30%)." },
+          { type: "ul", items: [
+            "<strong>0 – 4,9:</strong> Suspenso (SS)",
+            "<strong>5,0 – 6,9:</strong> Aprobado (AP)",
+            "<strong>7,0 – 8,9:</strong> Notable (NT)",
+            "<strong>9,0 – 10:</strong> Sobresaliente (SB)"
+          ]},
+          { type: "h3", text: "Convocatoria extraordinaria" },
+          { type: "ul", items: [
+            "Es una <strong>extensión de plazo</strong> para finalizar aspectos pendientes, no para hacer un trabajo completo",
+            "Tendrás una <strong>última entrega</strong> para que el director la revise",
+            "Si el director da el visto bueno, podrás depositar y defender",
+            "El director <strong>no está obligado</strong> a autorizar el depósito en extraordinaria"
+          ]},
+          { type: "tip", text: "Si el motivo de la no autorización fue <strong>falta de originalidad</strong>, necesitarás un esfuerzo considerable para modificar el trabajo." }
+        ]
+      }
+    ]
+  }
+];
+
+let active = null;
+let flat = [];
+
+function init() {
+  flat = [];
+  DATA.forEach(cat => { cat.items.forEach(item => { flat.push({ cat: cat.cat, ref: item }); }); });
+  render();
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { active = null; render(); }
+    if (active !== null) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); nav(1); }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); nav(-1); }
+    }
+  });
+}
+
+function render() {
+  renderMenu();
+  renderPanel();
+  document.body.classList.toggle('panel-open', active !== null);
+}
+
+function renderMenu() {
+  const m = document.getElementById('menu');
+  m.innerHTML = '';
+  const hdr = document.createElement('div');
+  hdr.className = 'menu-header';
+  hdr.innerHTML = `<h1>Guía del TFE</h1><p>Máster en Inteligencia Artificial — UNIR<br>Guía de consulta rápida para estudiantes</p>`;
+  m.appendChild(hdr);
+  const wrap = document.createElement('div');
+  wrap.className = 'menu-items';
+  let lastCat = '', gi = 0;
+  DATA.forEach(cat => {
+    cat.items.forEach(item => {
+      const idx = gi++;
+      if (cat.cat !== lastCat) {
+        lastCat = cat.cat;
+        const cl = document.createElement('div');
+        cl.className = 'cat-label';
+        cl.textContent = cat.cat;
+        wrap.appendChild(cl);
+      }
+      const btn = document.createElement('button');
+      btn.className = 'menu-btn' + (active === idx ? ' active' : '');
+      btn.onclick = () => { active = (active === idx ? null : idx); render(); };
+      btn.innerHTML = `<span class="btn-num">${idx + 1}</span><span class="btn-text"><span class="btn-name">${item.name}</span><span class="btn-sub">${item.sub}</span></span><span class="btn-arrow">&rarr;</span>`;
+      wrap.appendChild(btn);
+    });
+  });
+  m.appendChild(wrap);
+  const dl = document.createElement('div');
+  dl.className = 'menu-download';
+  dl.innerHTML = `<a href="guia.pdf" download="guia.pdf" target="_blank">&#8615; Descargar guía original (PDF)</a>`;
+  m.appendChild(dl);
+}
+
+function renderPanel() {
+  const p = document.getElementById('panel');
+  if (active === null) { p.innerHTML = ''; return; }
+  const f = flat[active], item = f.ref;
+  let bodyHTML = '';
+  for (const block of item.content) {
+    if (block.type === 'p') bodyHTML += `<div class="block"><p>${block.text}</p></div>`;
+    else if (block.type === 'h3') bodyHTML += `<div class="block block-heading"><h3>${block.text}</h3></div>`;
+    else if (block.type === 'ul') bodyHTML += `<div class="block"><ul>${block.items.map(i=>`<li>${i}</li>`).join('')}</ul></div>`;
+    else if (block.type === 'ol') bodyHTML += `<div class="block"><ol>${block.items.map(i=>`<li>${i}</li>`).join('')}</ol></div>`;
+    else if (block.type === 'tip') bodyHTML += `<div class="block block-tip"><p>${block.text}</p></div>`;
+    else if (block.type === 'warn') bodyHTML += `<div class="block block-warn"><p>${block.text}</p></div>`;
+    else if (block.type === 'info') bodyHTML += `<div class="block block-info"><p>${block.text}</p></div>`;
+  }
+  p.innerHTML = `
+    <div class="panel-header"><h2>${item.name}</h2><span class="p-cat">${f.cat}</span><button class="close-btn" onclick="active=null;render()">&times;</button></div>
+    <div class="panel-body">${bodyHTML}</div>
+    <div class="panel-footer"><button class="panel-nav" onclick="nav(-1)" ${active<=0?'disabled':''}>&larr; Anterior</button><span class="panel-counter">${active+1} / ${flat.length}</span><button class="panel-nav" onclick="nav(1)" ${active>=flat.length-1?'disabled':''}> Siguiente &rarr;</button></div>`;
+}
+
+function nav(dir) {
+  const next = active + dir;
+  if (next >= 0 && next < flat.length) { active = next; render(); }
+}
+
+init();
+</script>
+</body>
+</html>

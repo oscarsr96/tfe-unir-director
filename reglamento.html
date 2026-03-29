@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reglamento TFG/TFM — UNIR</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #0ea5e9;
+    --accent2: #7dd3fc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+  }
+
+  /* ── Menú lateral ── */
+  .menu {
+    width: 340px;
+    flex-shrink: 0;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+  .menu-header {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .menu-header h1 {
+    font-size: 1.45rem;
+    font-weight: 800;
+    margin-bottom: .25rem;
+    background: linear-gradient(135deg, #7dd3fc, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .menu-header p {
+    font-size: .82rem;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+  .menu-items {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .cat-label {
+    padding: .5rem 1.5rem;
+    font-size: .65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted);
+    background: rgba(255,255,255,.02);
+    border-bottom: 1px solid var(--border);
+  }
+  .menu-btn {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    width: 100%;
+    padding: .7rem 1.5rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text);
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    transition: all .12s;
+    font-family: inherit;
+  }
+  .menu-btn:hover { background: rgba(255,255,255,.05); }
+  .menu-btn.active {
+    background: rgba(14,165,233,.12);
+    border-left: 4px solid var(--accent);
+  }
+  .menu-btn .btn-num {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    background: rgba(255,255,255,.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .72rem;
+    font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: all .12s;
+  }
+  .menu-btn.active .btn-num {
+    background: var(--accent);
+    color: white;
+  }
+  .menu-btn .btn-text { flex: 1; min-width: 0; }
+  .menu-btn .btn-name {
+    font-size: .88rem;
+    font-weight: 600;
+    display: block;
+    line-height: 1.3;
+  }
+  .menu-btn .btn-sub {
+    font-size: .68rem;
+    color: var(--muted);
+    display: block;
+    line-height: 1.3;
+    margin-top: .1rem;
+  }
+  .menu-btn .btn-arrow {
+    color: var(--muted);
+    font-size: .8rem;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity .1s;
+  }
+  .menu-btn:hover .btn-arrow,
+  .menu-btn.active .btn-arrow { opacity: 1; }
+
+  .menu-download {
+    padding: .6rem 1.5rem;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .menu-download a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    padding: .5rem;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: .78rem;
+    font-weight: 500;
+    transition: all .12s;
+  }
+  .menu-download a:hover {
+    background: rgba(255,255,255,.1);
+    color: var(--text);
+  }
+
+  /* ── Panel lateral ── */
+  .panel {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--bg);
+    animation: slideIn .25s ease;
+  }
+  body.panel-open .panel { display: flex; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .panel-header {
+    padding: 1.25rem 2.5rem .75rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-header h2 { font-size: 1.6rem; font-weight: 800; }
+  .panel-header .p-cat {
+    font-size: .8rem;
+    color: var(--muted);
+    margin-left: auto;
+  }
+  .panel-header .close-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .1s;
+    font-family: inherit;
+    flex-shrink: 0;
+  }
+  .panel-header .close-btn:hover { background: rgba(255,255,255,.08); color: white; }
+
+  .panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 2.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* Content blocks */
+  .block {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .block h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: .5rem;
+    color: var(--accent2);
+  }
+  .block p, .block li {
+    font-size: 1rem;
+    color: #cbd5e1;
+    line-height: 1.7;
+  }
+  .block ul, .block ol {
+    padding-left: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+  }
+  .block li::marker { color: var(--accent); }
+
+  .block-tip {
+    background: rgba(14,165,233,.08);
+    border-left: 4px solid var(--accent);
+  }
+  .block-tip p { color: var(--accent2); }
+
+  .block-warn {
+    background: rgba(245,158,11,.08);
+    border-left: 4px solid #f59e0b;
+  }
+  .block-warn p { color: #fcd34d; }
+
+  .block-danger {
+    background: rgba(239,68,68,.08);
+    border-left: 4px solid #ef4444;
+  }
+  .block-danger p { color: #fca5a5; }
+
+  .block-heading {
+    background: transparent;
+    border: none;
+    padding: .35rem 0 0;
+    flex: 0;
+  }
+
+  .panel-footer {
+    flex-shrink: 0;
+    padding: .5rem 2.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+  }
+  .panel-nav {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: .3rem .7rem;
+    border-radius: 6px;
+    font-size: .8rem;
+    cursor: pointer;
+    transition: all .1s;
+    font-family: inherit;
+  }
+  .panel-nav:hover { background: rgba(255,255,255,.06); color: white; }
+  .panel-nav:disabled { opacity: .2; cursor: default; }
+  .panel-nav:disabled:hover { background: none; color: var(--muted); }
+  .panel-counter { font-size: .75rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="menu" id="menu"></div>
+<div class="panel" id="panel"></div>
+
+<script>
+const DATA = [
+  {
+    cat: "Disposiciones generales",
+    items: [
+      {
+        name: "Objeto y características del TFG/TFM",
+        sub: "Qué es, requisitos de originalidad y cuándo puedes defender",
+        content: [
+          { type: "p", text: "El TFG/TFM es un <strong>trabajo académico original e inédito</strong> en el que aplicas conocimientos adquiridos en la titulación. Se realiza de forma individual bajo supervisión de un director asignado." },
+          { type: "ul", items: [
+            "Puede ser grupal si la guía docente lo permite y lo autoriza la dirección del título. En ese caso, <strong>la defensa y evaluación son siempre individuales</strong>",
+            "Debe ser <strong>original</strong> (objetivos y recogida de datos propios) e <strong>inédito</strong> (no presentado ni publicado antes)",
+            "Su superación es <strong>imprescindible</strong> para obtener el título oficial (RD 822/2021)"
+          ]},
+          { type: "warn", text: "<strong>Requisito para defender:</strong> debes haber cursado y superado el resto de asignaturas del plan de estudios. Si tienes asignaturas para convocatoria extraordinaria, tu defensa pasa automáticamente a extraordinaria." },
+          { type: "ul", items: [
+            "La defensa tiene <strong>carácter público</strong> de inicio a fin, incluyendo preguntas del tribunal",
+            "Si necesitas recabar datos personales de terceros (especialmente sanitarios), necesitas <strong>autorización previa del Comité de Ética</strong>. Sin ella, no podrás depositar ni defender"
+          ]}
+        ]
+      },
+      {
+        name: "Comisión Académica",
+        sub: "Quién la forma y qué funciones tiene",
+        content: [
+          { type: "p", text: "Formada por el <strong>coordinador/director de la titulación</strong> y dos profesores más que impartan docencia en la misma." },
+          { type: "h3", text: "Funciones" },
+          { type: "ul", items: [
+            "Asignar director a los estudiantes",
+            "Actuar como apoyo para los directores",
+            "Estudiar incidencias y dudas del desarrollo de los TFG/TFM",
+            "Supervisar y apoyar al Departamento de Defensas",
+            "Asumir las funciones del director en caso de baja, hasta que se asigne uno nuevo",
+            "Estudiar y otorgar las menciones de <strong>matrícula de honor</strong>"
+          ]}
+        ]
+      },
+      {
+        name: "Evaluación: quién evalúa",
+        sub: "Diferencia entre TFG (evaluador) y TFM (comisión)",
+        content: [
+          { type: "h3", text: "En Grado (TFG)" },
+          { type: "p", text: "Evaluación compartida entre el <strong>director del trabajo</strong> y un <strong>profesor evaluador</strong> nombrado por la Comisión Académica, preferentemente del claustro de UNIR y especialista en el ámbito." },
+          { type: "h3", text: "En Máster (TFM)" },
+          { type: "p", text: "Evaluado por una <strong>comisión evaluadora</strong> de dos profesores especialistas:" },
+          { type: "ul", items: [
+            "<strong>Presidente</strong> — debe ostentar el grado de doctor",
+            "<strong>Secretario</strong> — debe ser profesor en activo de UNIR"
+          ]}
+        ]
+      },
+      {
+        name: "Director del TFG/TFM",
+        sub: "Su rol, funciones y la figura del codirector",
+        content: [
+          { type: "ul", items: [
+            "La Comisión Académica asigna a cada estudiante un <strong>director de UNIR</strong>",
+            "Puede asignarse un <strong>codirector</strong> (interno o externo, doctor o experto profesional)",
+            "Su función: <strong>orientar, dirigir, supervisar</strong> y velar por el cumplimiento de los objetivos",
+            "Realiza una valoración final sobre si el trabajo es <strong>apto para la defensa</strong>"
+          ]},
+          { type: "warn", text: "La autorización del director para defender <strong>no supone la superación</strong> del TFG/TFM. Es solo el visto bueno para presentarte." }
+        ]
+      }
+    ]
+  },
+  {
+    cat: "Procedimiento",
+    items: [
+      {
+        name: "Matriculación",
+        sub: "Cuándo matricularte, convocatorias y plazos",
+        content: [
+          { type: "ul", items: [
+            "Solo puedes matricularte si has <strong>cursado previamente</strong> el resto de asignaturas (o las vas a cursar en la misma matrícula)",
+            "La matrícula da derecho a <strong>dos convocatorias</strong> en el mismo curso: ordinaria y extraordinaria",
+            "Si no superas ninguna, deberás <strong>matricularte de nuevo</strong>"
+          ]},
+          { type: "tip", text: "Si no puedes presentarte en ninguna convocatoria por causa justificada pero tienes la autorización del director, esta es válida el <strong>curso académico siguiente</strong>. Solo pagas derechos de defensa." },
+          { type: "p", text: "Si defendiste sin tener el expediente completo, la calificación obtenida será válida durante el curso académico siguiente. La dirección académica puede extender este periodo excepcionalmente." }
+        ]
+      },
+      {
+        name: "Elaboración del trabajo",
+        sub: "Entregas, horas de dedicación y prohibiciones",
+        content: [
+          { type: "ul", items: [
+            "Envía tu propuesta a través del <strong>campus virtual</strong>, según las entregas y plazos de tu titulación",
+            "El tema debe poder realizarse en el <strong>número de horas correspondientes a los ECTS</strong> asignados",
+            "Queda <strong>prohibido</strong> usar datos personales de terceros sin autorización de su titular",
+          ]},
+          { type: "danger", text: "Es una <strong>conducta antiacadémica</strong> (con medidas disciplinarias) realizar el trabajo con ayuda de terceros que no haya sido expresamente autorizada por el director." }
+        ]
+      },
+      {
+        name: "Autorización para depósito y defensa",
+        sub: "El proceso desde que terminas hasta que te convocan",
+        content: [
+          { type: "ol", items: [
+            "Terminas el trabajo → el director te comunica si procede el <strong>depósito</strong>",
+            "Depositas el documento final en <strong>PDF</strong>",
+            "El director <strong>autoriza (o deniega) la defensa</strong> basándose en el documento depositado",
+            "Junto a la autorización, el director envía una <strong>propuesta de calificación</strong> de estructura y contenido (rúbrica)",
+            "El Departamento de Defensas te <strong>convoca</strong> al acto de defensa"
+          ]},
+          { type: "h3", text: "En caso de TFG" },
+          { type: "p", text: "El profesor evaluador valida las calificaciones propuestas. Si discrepa, lo eleva a la Comisión Académica <strong>al menos 3 días hábiles antes</strong> de la defensa." },
+          { type: "h3", text: "En caso de TFM" },
+          { type: "p", text: "La comisión evaluadora puede dictaminar otra calificación <strong>sin necesidad de recurrir</strong> a la Comisión Académica." },
+          { type: "tip", text: "Si te deniegan la defensa en convocatoria ordinaria, tienes derecho a un <strong>periodo adicional de tutela</strong> con tu director hasta el depósito en convocatoria extraordinaria." }
+        ]
+      },
+      {
+        name: "La defensa",
+        sub: "Cómo es el acto, el tiempo, las preguntas y la grabación",
+        content: [
+          { type: "ul", items: [
+            "UNIR publica el <strong>calendario con al menos 10 días naturales</strong> de antelación",
+            "Entre depósito y defensa deben transcurrir entre <strong>30 y 90 días naturales</strong>",
+            "Consiste en una <strong>exposición oral</strong> en el tiempo máximo fijado, apoyada con recursos tecnológicos",
+            "Tras la exposición: <strong>preguntas y aclaraciones</strong> del tribunal",
+            "Entre convocatoria ordinaria y extraordinaria deben transcurrir <strong>al menos 3 semanas</strong>"
+          ]},
+          { type: "h3", text: "Calificación en la defensa" },
+          { type: "ul", items: [
+            "<strong>TFM:</strong> la comisión evaluadora delibera a puerta cerrada y otorga la calificación. Las calificaciones propuestas por el director NO son vinculantes",
+            "<strong>TFG:</strong> el profesor evaluador valora la presentación/defensa y completa la rúbrica con su parte",
+          ]},
+          { type: "danger", text: "<strong>La superación del apartado de defensa es requisito indispensable</strong> para aprobar. Si hay problemas graves (p.ej. dudas de autoría), se puede aplicar suspenso directo." },
+          { type: "tip", text: "La defensa es <strong>online y se graba</strong>. Deberás identificarte según el protocolo establecido. Puedes solicitar cambio de fecha excepcionalmente." }
+        ]
+      }
+    ]
+  },
+  {
+    cat: "Plagio y originalidad",
+    items: [
+      {
+        name: "Detección de plagio",
+        sub: "Herramientas anti-plagio, consecuencias y qué se considera no original",
+        content: [
+          { type: "ul", items: [
+            "El director comprueba que <strong>no existe plagio</strong> usando herramientas anti-plagio facilitadas por UNIR",
+            "En la autorización figurará el <strong>porcentaje de coincidencia</strong> con fuentes no citadas",
+            "Si el tribunal detecta plagio antes de la defensa, te recomendarán <strong>renunciar a presentarte</strong>"
+          ]},
+          { type: "danger", text: "El plagio supone <strong>suspenso automático</strong>. La falsa autoría implica además la apertura de un <strong>expediente disciplinario por falta muy grave</strong>." },
+          { type: "h3", text: "Qué NO es original ni inédito" },
+          { type: "ul", items: [
+            "<strong>No es original</strong> un trabajo con exceso de información de otras fuentes, aunque estén citadas y referenciadas",
+            "<strong>No es inédito</strong> un trabajo con similitud con trabajos anteriores del estudiante, aunque estén citados"
+          ]},
+          { type: "warn", text: "Si subes tu trabajo a una herramienta anti-plagio <strong>por tu cuenta antes de entregarlo</strong> y luego el director detecta alta similitud, la carga de demostrar que no es plagio recae <strong>sobre ti</strong>." }
+        ]
+      }
+    ]
+  },
+  {
+    cat: "Calificación",
+    items: [
+      {
+        name: "Escala de calificaciones",
+        sub: "De 0 a 10, con tres componentes y requisito mínimo en defensa",
+        content: [
+          { type: "h3", text: "Escala numérica" },
+          { type: "ul", items: [
+            "<strong>0,0 – 4,9</strong> → Suspenso",
+            "<strong>5,0 – 6,9</strong> → Aprobado",
+            "<strong>7,0 – 8,9</strong> → Notable",
+            "<strong>9,0 – 10</strong> → Sobresaliente"
+          ]},
+          { type: "h3", text: "Tres componentes" },
+          { type: "p", text: "La calificación consta de: <strong>Estructura</strong> (20%), <strong>Contenido</strong> (50%) y <strong>Defensa</strong> (30%)." },
+          { type: "warn", text: "Para aprobar necesitas al menos el <strong>50% de los puntos de defensa</strong> (es decir, 1,5 sobre 3)." }
+        ]
+      },
+      {
+        name: "Matrícula de honor y repositorio",
+        sub: "Cuándo se otorga y publicación de trabajos destacados",
+        content: [
+          { type: "h3", text: "Matrícula de honor" },
+          { type: "ul", items: [
+            "Se puede proponer para trabajos con calificación <strong>≥ 9,7</strong>",
+            "La concede la Comisión Académica al término de cada convocatoria",
+            "Máximo <strong>2,5% de los matriculados</strong> en cada convocatoria (o 1 si hay menos de 40 estudiantes)"
+          ]},
+          { type: "h3", text: "Repositorio público" },
+          { type: "p", text: "Los trabajos con calificación <strong>≥ 9,0</strong> pueden depositarse en el repositorio público institucional de UNIR (bajo licencia Creative Commons), si el estudiante lo autoriza expresamente." }
+        ]
+      },
+      {
+        name: "Reclamaciones",
+        sub: "Plazos y proceso para impugnar tu calificación",
+        content: [
+          { type: "h3", text: "Impugnación de calificación" },
+          { type: "ul", items: [
+            "Plazo: <strong>máximo 72 horas</strong> desde la fecha de defensa",
+            "Se presenta mediante el formulario disponible a tal efecto",
+            "Se nombra una <strong>comisión de reclamaciones</strong> de 3 miembros (ninguno participó en la evaluación)",
+            "La comisión revisa el trabajo y elabora propuesta → la resolución del rector es <strong>inapelable</strong>"
+          ]},
+          { type: "h3", text: "Otras reclamaciones" },
+          { type: "ul", items: [
+            "Las que no afecten a la calificación se presentan ante el <strong>Defensor Universitario</strong> (mismo plazo de 72h)",
+            "Su decisión puede recurrirse ante el director de área. No cabe recurso contra esta resolución"
+          ]},
+          { type: "tip", text: "Si suspendes, el tribunal te comunicará <strong>verbalmente las causas y recomendaciones de mejora</strong> y lo dejará reflejado en el dorso del acta." }
+        ]
+      }
+    ]
+  }
+];
+
+let active = null;
+let flat = [];
+
+function init() {
+  flat = [];
+  DATA.forEach(cat => {
+    cat.items.forEach(item => {
+      flat.push({ cat: cat.cat, ref: item });
+    });
+  });
+  render();
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { active = null; render(); }
+    if (active !== null) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); nav(1); }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); nav(-1); }
+    }
+  });
+}
+
+function render() {
+  renderMenu();
+  renderPanel();
+  document.body.classList.toggle('panel-open', active !== null);
+}
+
+function renderMenu() {
+  const m = document.getElementById('menu');
+  m.innerHTML = '';
+
+  const hdr = document.createElement('div');
+  hdr.className = 'menu-header';
+  hdr.innerHTML = `<h1>Reglamento TFG/TFM</h1><p>Universidad Internacional de La Rioja — UNIR<br>Guía de consulta rápida para estudiantes</p>`;
+  m.appendChild(hdr);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'menu-items';
+
+  let lastCat = '';
+  let gi = 0;
+  DATA.forEach(cat => {
+    cat.items.forEach(item => {
+      const idx = gi++;
+      if (cat.cat !== lastCat) {
+        lastCat = cat.cat;
+        const cl = document.createElement('div');
+        cl.className = 'cat-label';
+        cl.textContent = cat.cat;
+        wrap.appendChild(cl);
+      }
+      const btn = document.createElement('button');
+      btn.className = 'menu-btn' + (active === idx ? ' active' : '');
+      btn.onclick = () => { active = (active === idx ? null : idx); render(); };
+      btn.innerHTML = `
+        <span class="btn-num">${idx + 1}</span>
+        <span class="btn-text">
+          <span class="btn-name">${item.name}</span>
+          <span class="btn-sub">${item.sub}</span>
+        </span>
+        <span class="btn-arrow">&rarr;</span>
+      `;
+      wrap.appendChild(btn);
+    });
+  });
+  m.appendChild(wrap);
+
+  const dl = document.createElement('div');
+  dl.className = 'menu-download';
+  dl.innerHTML = `<a href="reglamento_trabajos_fin_grado_master.pdf" download="reglamento_trabajos_fin_grado_master.pdf" target="_blank">&#8615; Descargar reglamento original (PDF)</a>`;
+  m.appendChild(dl);
+}
+
+function renderPanel() {
+  const p = document.getElementById('panel');
+  if (active === null) { p.innerHTML = ''; return; }
+
+  const f = flat[active];
+  const item = f.ref;
+
+  let bodyHTML = '';
+  for (const block of item.content) {
+    if (block.type === 'p') {
+      bodyHTML += `<div class="block"><p>${block.text}</p></div>`;
+    } else if (block.type === 'h3') {
+      bodyHTML += `<div class="block block-heading"><h3>${block.text}</h3></div>`;
+    } else if (block.type === 'ul') {
+      bodyHTML += `<div class="block"><ul>${block.items.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
+    } else if (block.type === 'ol') {
+      bodyHTML += `<div class="block"><ol>${block.items.map(i => `<li>${i}</li>`).join('')}</ol></div>`;
+    } else if (block.type === 'tip') {
+      bodyHTML += `<div class="block block-tip"><p>${block.text}</p></div>`;
+    } else if (block.type === 'warn') {
+      bodyHTML += `<div class="block block-warn"><p>${block.text}</p></div>`;
+    } else if (block.type === 'danger') {
+      bodyHTML += `<div class="block block-danger"><p>${block.text}</p></div>`;
+    }
+  }
+
+  p.innerHTML = `
+    <div class="panel-header">
+      <h2>${item.name}</h2>
+      <span class="p-cat">${f.cat}</span>
+      <button class="close-btn" onclick="active=null;render()">&times;</button>
+    </div>
+    <div class="panel-body">${bodyHTML}</div>
+    <div class="panel-footer">
+      <button class="panel-nav" onclick="nav(-1)" ${active <= 0 ? 'disabled' : ''}>&larr; Anterior</button>
+      <span class="panel-counter">${active + 1} / ${flat.length}</span>
+      <button class="panel-nav" onclick="nav(1)" ${active >= flat.length - 1 ? 'disabled' : ''}>Siguiente &rarr;</button>
+    </div>
+  `;
+}
+
+function nav(dir) {
+  const next = active + dir;
+  if (next >= 0 && next < flat.length) {
+    active = next;
+    render();
+  }
+}
+
+init();
+</script>
+</body>
+</html>

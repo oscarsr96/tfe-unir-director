@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rúbrica TFE — UNIR</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #3b82f6;
+    --sus: #ef4444; --sus-bg: #1c1317;
+    --apr: #f59e0b; --apr-bg: #1c1a11;
+    --not: #3b82f6; --not-bg: #111827;
+    --sob: #22c55e; --sob-bg: #111c16;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+  }
+
+  /* ── Menú lateral ── */
+  .menu {
+    width: 340px;
+    flex-shrink: 0;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .menu-header {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .menu-header h1 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: .25rem;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .menu-header p {
+    font-size: .85rem;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+  .back-btn {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem 1.5rem;
+    font-size: .8rem;
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+    transition: all .15s;
+  }
+  .back-btn:hover { color: var(--accent); background: rgba(255,255,255,.03); }
+
+  .menu-items {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .cat-label {
+    padding: .6rem 1.5rem;
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted);
+    background: rgba(255,255,255,.02);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .cat-label .cat-pct {
+    font-size: .65rem;
+    opacity: .6;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .menu-btn {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    width: 100%;
+    padding: .85rem 1.5rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text);
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    transition: all .12s;
+    font-family: inherit;
+  }
+  .menu-btn:hover { background: rgba(255,255,255,.05); }
+  .menu-btn.active {
+    background: rgba(59,130,246,.12);
+    border-left: 4px solid var(--accent);
+  }
+  .menu-btn .btn-num {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: rgba(255,255,255,.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .8rem;
+    font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: all .12s;
+  }
+  .menu-btn.active .btn-num {
+    background: var(--accent);
+    color: white;
+  }
+  .menu-btn .btn-text {
+    flex: 1;
+    min-width: 0;
+  }
+  .menu-btn .btn-name {
+    font-size: .95rem;
+    font-weight: 600;
+    display: block;
+    line-height: 1.3;
+  }
+  .menu-btn .btn-sub {
+    font-size: .72rem;
+    color: var(--muted);
+    display: block;
+    line-height: 1.3;
+    margin-top: .1rem;
+  }
+  .menu-btn .btn-weight {
+    font-size: .7rem;
+    color: var(--muted);
+    background: rgba(255,255,255,.06);
+    padding: .15rem .45rem;
+    border-radius: 5px;
+    flex-shrink: 0;
+    font-weight: 600;
+  }
+  .menu-btn .btn-arrow {
+    color: var(--muted);
+    font-size: .8rem;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity .1s;
+  }
+  .menu-btn:hover .btn-arrow,
+  .menu-btn.active .btn-arrow { opacity: 1; }
+
+  .menu-footer {
+    padding: .75rem 1.5rem;
+    border-top: 1px solid var(--border);
+    font-size: .72rem;
+    color: #f87171;
+    line-height: 1.45;
+    flex-shrink: 0;
+    background: rgba(239,68,68,.05);
+  }
+
+  .menu-download {
+    padding: .6rem 1.5rem;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .menu-download a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    padding: .5rem;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: .78rem;
+    font-weight: 500;
+    transition: all .12s;
+  }
+  .menu-download a:hover {
+    background: rgba(255,255,255,.1);
+    color: var(--text);
+  }
+
+  /* ── Panel lateral expandible ── */
+  .panel {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--bg);
+    animation: slideIn .25s ease;
+  }
+  body.panel-open .panel { display: flex; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .panel-header {
+    padding: 1.25rem 1.5rem .75rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-header h2 {
+    font-size: 1.4rem;
+    font-weight: 800;
+  }
+  .panel-header .p-weight {
+    font-size: .85rem;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .panel-header .p-cat {
+    font-size: .8rem;
+    color: var(--muted);
+    margin-left: auto;
+    text-transform: capitalize;
+  }
+  .panel-header .close-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .1s;
+    font-family: inherit;
+    flex-shrink: 0;
+  }
+  .panel-header .close-btn:hover { background: rgba(255,255,255,.08); color: white; }
+
+  .panel-tip {
+    margin: .75rem 1.5rem;
+    padding: .65rem .85rem;
+    background: rgba(59,130,246,.08);
+    border-radius: 10px;
+    font-size: .88rem;
+    color: #93c5fd;
+    line-height: 1.55;
+    border-left: 4px solid var(--accent);
+    flex-shrink: 0;
+  }
+
+  .panel-sub {
+    padding: 0 1.5rem;
+    margin-bottom: .5rem;
+    font-size: .9rem;
+    color: var(--muted);
+    flex-shrink: 0;
+    line-height: 1.4;
+  }
+
+  /* ── Levels rows ── */
+  .levels {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    padding: 0 1.5rem;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .level {
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: .6rem .85rem;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .level[data-l="sus"] { background: var(--sus-bg); border-color: rgba(239,68,68,.3); }
+  .level[data-l="apr"] { background: var(--apr-bg); border-color: rgba(245,158,11,.3); }
+  .level[data-l="not"] { background: var(--not-bg); border-color: rgba(59,130,246,.3); }
+  .level[data-l="sob"] { background: var(--sob-bg); border-color: rgba(34,197,94,.3); }
+
+  .level .lv-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .45rem;
+    flex-shrink: 0;
+    padding-bottom: .4rem;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .level .lv-label {
+    font-weight: 800;
+    font-size: .85rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+  .level[data-l="sus"] .lv-label { color: var(--sus); }
+  .level[data-l="apr"] .lv-label { color: var(--apr); }
+  .level[data-l="not"] .lv-label { color: var(--not); }
+  .level[data-l="sob"] .lv-label { color: var(--sob); }
+
+  .level .lv-range {
+    font-size: .7rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .level ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem .6rem;
+  }
+  .level li {
+    font-size: .85rem;
+    color: #cbd5e1;
+    padding: .15rem 0 .15rem .85rem;
+    position: relative;
+    line-height: 1.45;
+  }
+  .level li::before {
+    content: '';
+    position: absolute;
+    left: 0; top: .5rem;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+  }
+  .level[data-l="sus"] li::before { background: var(--sus); opacity: .5; }
+  .level[data-l="apr"] li::before { background: var(--apr); opacity: .5; }
+  .level[data-l="not"] li::before { background: var(--not); opacity: .5; }
+  .level[data-l="sob"] li::before { background: var(--sob); opacity: .5; }
+
+  .panel-footer {
+    flex-shrink: 0;
+    padding: .5rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+  }
+  .panel-nav {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: .3rem .7rem;
+    border-radius: 6px;
+    font-size: .8rem;
+    cursor: pointer;
+    transition: all .1s;
+    font-family: inherit;
+  }
+  .panel-nav:hover { background: rgba(255,255,255,.06); color: white; }
+  .panel-nav:disabled { opacity: .2; cursor: default; }
+  .panel-nav:disabled:hover { background: none; color: var(--muted); }
+  .panel-counter { font-size: .75rem; color: var(--muted); }
+
+  /* ── Placeholder cuando no hay nada abierto ── */
+  .placeholder {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--border);
+    font-size: 1rem;
+  }
+
+  .hamburger { display: none; }
+
+  /* ── Responsive: mobile & tablet ── */
+  @media (max-width: 768px) {
+    html, body { height: auto; overflow: auto; }
+    body { flex-direction: column; height: auto; }
+    .hamburger {
+      display: flex;
+      position: fixed;
+      top: 1rem; left: 1rem;
+      z-index: 1000;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,.3);
+    }
+    .menu {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 999;
+      transform: translateX(-100%);
+      transition: transform .25s ease;
+      border-right: none;
+    }
+    .menu.open { transform: translateX(0); }
+    .panel { width: 100%; height: auto; overflow: auto; padding-top: 4rem; }
+    .levels { overflow-y: visible; }
+  }
+</style>
+</head>
+<body>
+<button class="hamburger" id="hamburger" aria-label="Abrir men&uacute;">&#9776;</button>
+<div class="menu" id="menu"></div>
+<div class="panel" id="panel"></div>
+
+<script>
+const DATA = [
+  {
+    cat: "Estructura", catPct: "20% de la nota", w: "10%",
+    name: "Estilo y formato académico",
+    sub: "Formato del documento, calidad de la redacción, ortografía y uso correcto de citas en formato APA.",
+    tip: "Usa formato APA 7. Revisa que TODAS las citas del texto estén en la lista de referencias y viceversa. Pide a alguien que lea tu trabajo para detectar erratas. Usa siempre el impersonal y un corrector ortográfico.",
+    levels: {
+      sus: ["Documento sin formato uniforme (tipo de letra, tamaño, sangrías distintas)", "Partes del texto con redacción incomprensible", "Faltas de ortografía", "Sin coherencia en la forma de citar ni en la bibliografía"],
+      apr: ["Formato y aspecto cuidados, pero problemas notables de redacción, ortografía o gramática", "No usa normativa APA pero la forma de citar es coherente en todo el documento"],
+      not: ["Expresión académica sin lenguaje coloquial, aunque algún cambio puntual de impersonal a plural mayestático", "Alguna errata aislada", "Utiliza normativa APA"],
+      sob: ["Redacción elegante y sin errores que facilita la lectura", "Expresión académica impecable", "Todas las citas del texto aparecen en la lista de referencias", "APA correctamente aplicado"]
+    }
+  },
+  {
+    cat: "Estructura", catPct: "20% de la nota", w: "10%",
+    name: "Estructura / apartados",
+    sub: "Que el documento incluya todas las secciones necesarias y estén conectadas con un hilo lógico.",
+    tip: "Apartados obligatorios: introducción, objetivos, marco teórico, metodología/desarrollo, resultados, conclusiones y bibliografía. Cada sección debe enlazar lógicamente con la siguiente.",
+    levels: {
+      sus: ["No incluye todos los apartados o está mal estructurado", "No hay coherencia ni relación entre los apartados"],
+      apr: ["Estructura mejorable en la organización", "Hay coherencia, pero falta cohesión entre los apartados"],
+      not: ["Incluye todos los apartados y están desarrollados, pero falta cohesión o continuidad entre ellos"],
+      sob: ["Todos los apartados con coherencia y desarrollo lógico continuo", "Extensión adecuada"]
+    }
+  },
+  {
+    cat: "Contenido", catPct: "50% de la nota", w: "10%",
+    name: "Alcance",
+    sub: "Relevancia del tema, calidad de los objetivos y nivel de la contribución al campo.",
+    tip: "Define QUÉ problema resuelves y POR QUÉ es relevante. Los objetivos específicos deben ser medibles y realistas. Tu trabajo debe tener perfil tecnológico claro y aportar algo nuevo.",
+    levels: {
+      sus: ["Alcance insuficiente para el nivel de la titulación", "No aporta nada nuevo", "Justificación del tema muy deficiente", "Incoherencia entre tema y objetivos", "Perfil poco tecnológico"],
+      apr: ["Contribución mínima a lo existente", "Presenta el tema pero falta justificación", "Objetivo general refleja parcialmente el TFE", "Algún objetivo no es realista o alcanzable"],
+      not: ["Contribución presente pero poco significativa", "Tema claro y justificado, aunque mejorable", "Objetivos adecuados pero mejorables"],
+      sob: ["Contribución interesante y significativa", "Tema bien formulado y justificado", "Objetivos correctos, coherentes, alcanzables y realistas"]
+    }
+  },
+  {
+    cat: "Contenido", catPct: "50% de la nota", w: "10%",
+    name: "Marco teórico y referencias",
+    sub: "Fundamentación teórica, calidad de la bibliografía y contextualización del problema.",
+    tip: "El marco teórico debe justificar tus decisiones técnicas. Usa referencias recientes y relevantes. No copies: sintetiza y conecta fuentes con tu problema. Explica el procedimiento.",
+    levels: {
+      sus: ["Marco teórico / estudios previos inexistentes", "Bibliografía no cubre el campo de estudio", "No es apropiado para los objetivos formulados", "Sin contextualización ni método explicado"],
+      apr: ["Marco teórico poco adecuado o sin detalle", "Bibliografía cubre mínimamente el campo", "Contextualizado pero falta describir el procedimiento"],
+      not: ["Marco teórico y estudios previos razonables", "Cobertura razonable del campo", "Contextualizado con descripción del procedimiento"],
+      sob: ["Marco teórico del nivel exigible en un TFE", "Referencias relevantes que cubren adecuadamente el campo", "Correctamente contextualizado"]
+    }
+  },
+  {
+    cat: "Contenido", catPct: "50% de la nota", w: "20%",
+    name: "Desarrollo de la contribución",
+    sub: "Calidad del desarrollo técnico, resultados y discusión. Criterio con más peso del contenido.",
+    tip: "El de MÁS PESO. Desarrolla tu solución clara y ordenada. Presenta resultados con tablas y gráficos. La discusión debe interpretar: qué significan, cómo se comparan, qué limitaciones tienen.",
+    levels: {
+      sus: ["No se aprecia contribución relevante o novedosa", "Desarrollo incorrecto", "Resultados confusos y poco coherentes", "Sin discusión de resultados"],
+      apr: ["Contribución incoherente o poco apreciable", "Resultados coherentes con objetivos pero discusión pobre"],
+      not: ["Resultados coherentes y bien descritos, pueden completarse más", "Discusión correcta pero mejorable"],
+      sob: ["Desarrollo claro y bien planteado", "Resultados coherentes con objetivos y bien descritos", "Discusión correcta"]
+    }
+  },
+  {
+    cat: "Contenido", catPct: "50% de la nota", w: "10%",
+    name: "Objetivos y conclusiones",
+    sub: "Coherencia global: objetivos, desarrollo y conclusiones perfectamente alineados.",
+    tip: "Las conclusiones deben responder UNO A UNO a cada objetivo. Incluye: limitaciones, prospectiva (líneas futuras) y reflexión sobre la mejora. Usa terminología propia.",
+    levels: {
+      sus: ["Objetivos inexistentes o mal formulados", "No están relacionados con el trabajo", "Sin conclusiones"],
+      apr: ["Conclusiones no responden a todos los objetivos", "Falta originalidad", "Faltan prospectiva o limitaciones", "Sin reflexión sobre mejora aportada"],
+      not: ["Tema claro, razones no suficientemente explícitas", "Objetivos bien formulados y realistas", "Algunas carencias en conclusiones", "Falta reflexión sobre mejora"],
+      sob: ["Tema bien formulado y justificado", "Objetivos correctos y coherentes", "Conclusiones originales con terminología propia", "Limitaciones y prospectiva fundamentada"]
+    }
+  },
+  {
+    cat: "Exposición", catPct: "30% de la nota", w: "10%",
+    name: "Presentación oral",
+    sub: "Claridad, orden, síntesis y calidad visual de la presentación ante el tribunal.",
+    tip: "Practica cronometrándote. Usa diagramas y figuras, no solo texto. Estructura: intro, problema, solución, demo/resultados, conclusiones. Ajústate al tiempo.",
+    levels: {
+      sus: ["Discurso sin orden ni estructura", "No queda claro qué ha hecho", "No capta la atención", "Nerviosismo excesivo", "No se ajusta al tiempo"],
+      apr: ["Ordenado pero falta claridad", "Apartados desiguales en calidad", "Se ajusta al tiempo", "Síntesis mejorable", "Solo texto, sin diagramas ni figuras"],
+      not: ["Ideas claras y ordenadas", "Comunicación fluida", "Ajustado al tiempo, algún apartado mejorable", "Síntesis mejorable", "Podría reducir diapositivas"],
+      sob: ["Ideas claras y ordenadas", "Capacidad de síntesis", "Comunicación fluida", "Ajustado al tiempo", "Tranquilo y confiado", "Capta la atención toda la presentación"]
+    }
+  },
+  {
+    cat: "Exposición", catPct: "30% de la nota", w: "20%",
+    name: "Dominio del contenido",
+    sub: "Conocimiento real demostrado y respuesta a preguntas. Criterio con más peso de la exposición.",
+    tip: "No leas. Conoce tus datos de memoria. Prepara preguntas típicas: por qué esta tecnología, limitaciones, cómo mejorarías. Muestra entusiasmo genuino.",
+    levels: {
+      sus: ["Lee de un papel, no usa diapositivas", "No responde correctamente al tribunal", "No demuestra conocimiento", "Se pierde repetidamente"],
+      apr: ["Discurso mecánico o leído", "Se pierde alguna vez pero se sigue el hilo", "Responde repitiendo discurso o con evasivas"],
+      not: ["Usa diapositivas, pocas veces papel", "Responde adecuadamente al tribunal", "Se expresa con claridad", "Se dirige al tribunal", "Énfasis gestual mejorable"],
+      sob: ["Diapositivas solo como apoyo", "Responde demostrando dominio del tema", "Interés y entusiasmo al hablar del tema"]
+    }
+  }
+];
+
+const LM = {
+  sus: { label: 'Suspenso', range: '0 – 4' },
+  apr: { label: 'Aprobado', range: '5 – 6' },
+  not: { label: 'Notable', range: '7 – 8' },
+  sob: { label: 'Sobresaliente', range: '9 – 10' }
+};
+
+let active = null;
+
+function render() {
+  renderMenu();
+  renderPanel();
+  document.body.classList.toggle('panel-open', active !== null);
+}
+
+function renderMenu() {
+  const m = document.getElementById('menu');
+  m.innerHTML = '';
+
+  // Header
+  const hdr = document.createElement('div');
+  hdr.className = 'menu-header';
+  hdr.innerHTML = `<h1>Rúbrica TFE</h1><p>Universidad Internacional de La Rioja — Guía de consulta rápida para estudiantes</p>`;
+  m.appendChild(hdr);
+
+  const backBtn = document.createElement('a');
+  backBtn.href = '/';
+  backBtn.className = 'back-btn';
+  backBtn.innerHTML = '&#8592; Volver a las guías';
+  m.appendChild(backBtn);
+
+  // Items
+  const wrap = document.createElement('div');
+  wrap.className = 'menu-items';
+
+  let lastCat = '';
+  DATA.forEach((item, i) => {
+    if (item.cat !== lastCat) {
+      lastCat = item.cat;
+      const cl = document.createElement('div');
+      cl.className = 'cat-label';
+      cl.innerHTML = `${item.cat}<span class="cat-pct">${item.catPct}</span>`;
+      wrap.appendChild(cl);
+    }
+    const btn = document.createElement('button');
+    btn.className = 'menu-btn' + (active === i ? ' active' : '');
+    btn.onclick = () => { active = (active === i ? null : i); render(); document.getElementById('menu').classList.remove('open'); };
+    btn.innerHTML = `
+      <span class="btn-num">${i + 1}</span>
+      <span class="btn-text">
+        <span class="btn-name">${item.name}</span>
+        <span class="btn-sub">${item.sub}</span>
+      </span>
+      <span class="btn-weight">${item.w}</span>
+      <span class="btn-arrow">&rarr;</span>
+    `;
+    wrap.appendChild(btn);
+  });
+  m.appendChild(wrap);
+
+  // Footer
+  const ft = document.createElement('div');
+  ft.className = 'menu-footer';
+  ft.innerHTML = `<strong>Requisito:</strong> Mínimo 1,5 pts en Exposición (de 3) para aprobar, independientemente de la nota total.`;
+  m.appendChild(ft);
+
+  // Download link
+  const dl = document.createElement('div');
+  dl.className = 'menu-download';
+  dl.innerHTML = `<a href="rubrica_TFE_UNIR.pdf" download="rubrica_TFE_UNIR.pdf" target="_blank">&#8615; Descargar rúbrica original (PDF)</a>`;
+  m.appendChild(dl);
+}
+
+function renderPanel() {
+  const p = document.getElementById('panel');
+  if (active === null) { p.innerHTML = ''; return; }
+
+  const item = DATA[active];
+
+  const levelOrder = ['sob', 'not', 'apr', 'sus'];
+  let levelsHTML = '';
+  for (const k of levelOrder) {
+    const items = item.levels[k];
+    const lm = LM[k];
+    levelsHTML += `
+      <div class="level" data-l="${k}">
+        <div class="lv-head">
+          <span class="lv-label">${lm.label}</span>
+          <span class="lv-range">${lm.range}</span>
+        </div>
+        <ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>
+      </div>`;
+  }
+
+  p.innerHTML = `
+    <div class="panel-header">
+      <h2>${item.name}</h2>
+      <span class="p-weight">${item.w}</span>
+      <span class="p-cat">${item.cat}</span>
+      <button class="close-btn" onclick="active=null;render()">&times;</button>
+    </div>
+    <p class="panel-sub">${item.sub}</p>
+    <div class="panel-tip">${item.tip}</div>
+    <div class="levels">${levelsHTML}</div>
+    <div class="panel-footer">
+      <button class="panel-nav" onclick="nav(-1)" ${active <= 0 ? 'disabled' : ''}>&larr; Anterior</button>
+      <span class="panel-counter">${active + 1} / ${DATA.length}</span>
+      <button class="panel-nav" onclick="nav(1)" ${active >= DATA.length - 1 ? 'disabled' : ''}>Siguiente &rarr;</button>
+    </div>
+  `;
+}
+
+function nav(dir) {
+  const next = active + dir;
+  if (next >= 0 && next < DATA.length) {
+    active = next;
+    render();
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { active = null; render(); }
+  if (active !== null) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); nav(1); }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); nav(-1); }
+  }
+});
+
+render();
+document.getElementById('hamburger').addEventListener('click', () => document.getElementById('menu').classList.toggle('open'));
+</script>
+</body>
+</html>

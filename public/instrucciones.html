@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instrucciones TFE — UNIR</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #8b5cf6;
+    --accent2: #a78bfa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+  }
+
+  /* ── Menú lateral ── */
+  .menu {
+    width: 340px;
+    flex-shrink: 0;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+  .menu-header {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .menu-header h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: .25rem;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .menu-header p {
+    font-size: .82rem;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+  .back-btn {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem 1.5rem;
+    font-size: .8rem;
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+    transition: all .15s;
+  }
+  .back-btn:hover { color: var(--accent); background: rgba(255,255,255,.03); }
+  .menu-items {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .cat-label {
+    padding: .5rem 1.5rem;
+    font-size: .65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted);
+    background: rgba(255,255,255,.02);
+    border-bottom: 1px solid var(--border);
+  }
+  .menu-btn {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    width: 100%;
+    padding: .7rem 1.5rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text);
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    transition: all .12s;
+    font-family: inherit;
+  }
+  .menu-btn:hover { background: rgba(255,255,255,.05); }
+  .menu-btn.active {
+    background: rgba(139,92,246,.12);
+    border-left: 4px solid var(--accent);
+  }
+  .menu-btn .btn-num {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    background: rgba(255,255,255,.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: all .12s;
+  }
+  .menu-btn.active .btn-num {
+    background: var(--accent);
+    color: white;
+  }
+  .menu-btn .btn-text { flex: 1; min-width: 0; }
+  .menu-btn .btn-name {
+    font-size: .88rem;
+    font-weight: 600;
+    display: block;
+    line-height: 1.3;
+  }
+  .menu-btn .btn-sub {
+    font-size: .68rem;
+    color: var(--muted);
+    display: block;
+    line-height: 1.3;
+    margin-top: .1rem;
+  }
+  .menu-btn .btn-arrow {
+    color: var(--muted);
+    font-size: .8rem;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity .1s;
+  }
+  .menu-btn:hover .btn-arrow,
+  .menu-btn.active .btn-arrow { opacity: 1; }
+
+  .menu-download {
+    padding: .6rem 1.5rem;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .menu-download a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    padding: .5rem;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: .78rem;
+    font-weight: 500;
+    transition: all .12s;
+  }
+  .menu-download a:hover {
+    background: rgba(255,255,255,.1);
+    color: var(--text);
+  }
+
+  /* ── Panel lateral ── */
+  .panel {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--bg);
+    animation: slideIn .25s ease;
+  }
+  body.panel-open .panel { display: flex; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .panel-header {
+    padding: 1.25rem 2.5rem .75rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-header h2 { font-size: 1.6rem; font-weight: 800; }
+  .panel-header .p-cat {
+    font-size: .8rem;
+    color: var(--muted);
+    margin-left: auto;
+  }
+  .panel-header .close-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .1s;
+    font-family: inherit;
+    flex-shrink: 0;
+  }
+  .panel-header .close-btn:hover { background: rgba(255,255,255,.08); color: white; }
+
+  .panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 2.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* Content blocks */
+  .block {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+  }
+  .block h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: .5rem;
+    color: var(--accent2);
+  }
+  .block p, .block li {
+    font-size: 1rem;
+    color: #cbd5e1;
+    line-height: 1.7;
+  }
+  .block ul, .block ol {
+    padding-left: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+  }
+  .block li::marker { color: var(--accent); }
+
+  .block-tip {
+    background: rgba(139,92,246,.08);
+    border-left: 4px solid var(--accent);
+  }
+  .block-tip p { color: #c4b5fd; }
+
+  .block-warn {
+    background: rgba(245,158,11,.08);
+    border-left: 4px solid #f59e0b;
+  }
+  .block-warn p { color: #fcd34d; }
+
+  .block-format {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .35rem 1rem;
+  }
+  .block-format dt {
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--accent2);
+  }
+  .block-format dd {
+    font-size: .95rem;
+    color: #cbd5e1;
+  }
+
+  /* Headings as separators don't flex-grow */
+  .block-heading {
+    background: transparent;
+    border: none;
+    padding: .35rem 0 0;
+    flex: 0;
+  }
+
+  .panel-footer {
+    flex-shrink: 0;
+    padding: .5rem 2.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+  }
+  .panel-nav {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: .3rem .7rem;
+    border-radius: 6px;
+    font-size: .8rem;
+    cursor: pointer;
+    transition: all .1s;
+    font-family: inherit;
+  }
+  .panel-nav:hover { background: rgba(255,255,255,.06); color: white; }
+  .panel-nav:disabled { opacity: .2; cursor: default; }
+  .panel-nav:disabled:hover { background: none; color: var(--muted); }
+  .panel-counter { font-size: .75rem; color: var(--muted); }
+
+  .tag {
+    display: inline-block;
+    font-size: .65rem;
+    font-weight: 600;
+    padding: .1rem .4rem;
+    border-radius: 4px;
+    background: rgba(139,92,246,.15);
+    color: var(--accent2);
+    margin-left: .5rem;
+    vertical-align: middle;
+  }
+
+  .hamburger { display: none; }
+
+  /* ── Responsive: mobile & tablet ── */
+  @media (max-width: 768px) {
+    html, body { height: auto; overflow: auto; }
+    body { flex-direction: column; height: auto; }
+    .hamburger {
+      display: flex; position: fixed; top: 1rem; left: 1rem; z-index: 1000;
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      width: 44px; height: 44px; border-radius: 10px;
+      align-items: center; justify-content: center; font-size: 1.3rem;
+      cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.3);
+    }
+    .menu {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 999; transform: translateX(-100%); transition: transform .25s ease;
+      border-right: none;
+    }
+    .menu.open { transform: translateX(0); }
+    .panel { width: 100%; height: auto; overflow: auto; padding-top: 4rem; }
+    .panel-body { overflow-y: visible; }
+  }
+</style>
+</head>
+<body>
+<button class="hamburger" id="hamburger" aria-label="Abrir men&uacute;">&#9776;</button>
+<div class="menu" id="menu"></div>
+<div class="panel" id="panel"></div>
+
+<script>
+const DATA = [
+  {
+    cat: "Indicaciones generales",
+    items: [
+      {
+        name: "Línea de discurso",
+        sub: "El hilo argumental que debe seguir tu TFE de principio a fin",
+        content: [
+          { type: "p", text: "La línea de discurso parte de una <strong>necesidad o problema claramente identificado</strong>. A partir de ese problema se revisa la literatura con un doble objetivo:" },
+          { type: "ol", items: [
+            "<strong>Analizar el problema</strong> profundizando en su comprensión. Demuestra su relevancia y tu nivel de conocimiento sobre el mismo.",
+            "<strong>Conocer alternativas de solución</strong>, demostrando que entiendes cómo han abordado otras personas este problema u otros similares."
+          ]},
+          { type: "p", text: "Sobre este análisis podrás fundamentar sólidamente la <strong>contribución</strong> de tu trabajo, apoyada en objetivos o hipótesis de investigación." },
+          { type: "tip", text: "El trabajo debe presentar algún tipo de evaluación o justificación de viabilidad de la solución propuesta. No basta con desarrollar: hay que demostrar que funciona." }
+        ]
+      },
+      {
+        name: "Estructura general y extensión",
+        sub: "Apartados obligatorios y número de páginas del TFE",
+        content: [
+          { type: "p", text: "El TFE sigue una estructura fija para homogeneizar los trabajos y facilitar su lectura:" },
+          { type: "ul", items: [
+            "<strong>Portada</strong> — respeta el formato de la plantilla",
+            "<strong>Resumen / Abstract</strong> — 150-300 palabras + 3-5 palabras clave",
+            "<strong>Índices numerados</strong> — contenidos, figuras y tablas (cada uno en página nueva)",
+            "<strong>Organización del grupo</strong> — solo en TFE grupales",
+            "<strong>Desarrollo en capítulos</strong> — cada capítulo comienza en página nueva",
+            "<strong>Referencias bibliográficas</strong> — en formato APA",
+            "<strong>Anexos</strong> — opcionales (encuestas, código, capturas…)"
+          ]},
+          { type: "warn", text: "<strong>Extensión TFE individual:</strong> mínimo 50 páginas, máximo 90 (sin portada, índices ni anexos).<br><strong>Extensión TFE grupal:</strong> mínimo 75 páginas (50% más que individual)." }
+        ]
+      },
+      {
+        name: "Formatos y plantilla",
+        sub: "Márgenes, tipografía, títulos, tablas y figuras",
+        content: [
+          { type: "p", text: "Usa la plantilla del aula virtual. <strong>No modifiques los estilos</strong> (márgenes, interlineado, tipografía)." },
+          { type: "format", items: [
+            ["Página", "A4"],
+            ["Margen izquierdo", "3,0 cm"],
+            ["Margen derecho", "2,0 cm"],
+            ["Márgenes sup/inf", "2,5 cm"],
+            ["Texto normal", "Calibri 12, justificado, interlineado 1,5, espacio 6 pts antes y después"],
+            ["Título 1", "Calibri Light 18, azul, justificado, interlineado 1,5"],
+            ["Título 2", "Calibri Light 14, azul, justificado, interlineado 1,5"],
+            ["Título 3", "Calibri Light 12, justificado, interlineado 1,5"],
+            ["Notas al pie", "Calibri 10, justificado, interlineado sencillo"],
+            ["Tablas/figuras", "Título arriba, fuente abajo (Calibri 9,5 centrado). Mínimo 9 pts"],
+            ["Encabezado", "Nombre del estudiante + título del TFE"],
+            ["Pie de página", "Número de página"]
+          ]},
+          { type: "tip", text: "Los borradores se entregan en <strong>Word</strong>. El documento final se deposita en <strong>PDF</strong>." }
+        ]
+      },
+      {
+        name: "Estética y estilo de redacción",
+        sub: "Recomendaciones para un documento académico impecable",
+        content: [
+          { type: "ul", items: [
+            "<strong>Verifica la originalidad</strong> — cita todas las fuentes; no debe haber texto ajeno sin referenciar",
+            "<strong>Cuida la presentación</strong> — tipo de letra, márgenes, encabezados, justificación, interlineado…",
+            "<strong>Revisa ortografía y redacción</strong> — usa el corrector de Word y pide a alguien que lo lea",
+            "Los párrafos deben seguir un <strong>hilo argumental lógico</strong>",
+            "Define los conceptos necesarios e incluye las <strong>citas pertinentes</strong>",
+            "Elimina párrafos demasiado cortos (mínimo 3 oraciones por párrafo)",
+            "Elimina frases superfluas y repeticiones",
+            "Escribe siempre un <strong>párrafo introductorio</strong> en cada capítulo/apartado",
+            "Evita dos encabezados consecutivos sin texto entre medias",
+            "Las figuras y tablas deben incluir <strong>número, título y fuente</strong>",
+            "Comprueba que los índices se generan correctamente"
+          ]},
+          { type: "tip", text: "Es un trabajo académico: debe reflejar la madurez de alguien que ha finalizado un estudio de posgrado." }
+        ]
+      },
+      {
+        name: "Normativa de citas",
+        sub: "Formato APA obligatorio en esta titulación",
+        content: [
+          { type: "p", text: "En esta titulación se cita de acuerdo con la <strong>normativa APA</strong>." },
+          { type: "p", text: "Tienes una guía con explicaciones y ejemplos en el apartado <em>Citas y bibliografía</em> del aula virtual: <strong>bibliografiaycitas.unir.net</strong>" },
+          { type: "tip", text: "Todas las citas del texto deben aparecer en la lista de referencias y viceversa. Repasa esto al final como paso obligatorio." }
+        ]
+      }
+    ]
+  },
+  {
+    cat: "Estructura del documento",
+    items: [
+      {
+        name: "Resumen",
+        sub: "Visión global del trabajo en 150-300 palabras",
+        content: [
+          { type: "warn", text: "El resumen se redacta <strong>en último lugar</strong>, cuando ya tienes clara la visión completa del documento." },
+          { type: "ul", items: [
+            "Extensión: <strong>150 a 300 palabras</strong>",
+            "Debe ofrecer una <strong>visión global</strong> del trabajo destacando los aspectos fundamentales",
+            "Indica claramente: <strong>objetivo principal</strong>, <strong>metodología</strong>, <strong>resultados</strong> y <strong>conclusión principal</strong>",
+            "Incluye <strong>3 a 5 palabras clave</strong> (keywords) como descriptores del trabajo"
+          ]},
+          { type: "tip", text: "Las palabras clave serán las utilizadas para localizar tu trabajo si llega a ser publicado. Elige términos específicos de tu dominio." }
+        ]
+      },
+      {
+        name: "Introducción",
+        sub: "Presenta el trabajo al lector: problema, importancia, objetivos y contribución",
+        content: [
+          { type: "p", text: "Es uno de los apartados <strong>más importantes</strong>. Debe dar una primera idea clara de lo realizado, las conclusiones y el procedimiento. Extensión: <strong>3 a 5 páginas</strong>." },
+          { type: "h3", text: "Motivación" },
+          { type: "ul", items: [
+            "¿Cuál es el problema que quieres tratar?",
+            "¿Cuáles crees que son las causas?",
+            "¿Por qué es relevante el problema?",
+            "Debe haber <strong>referencias a investigación previa</strong>, aunque luego se profundice en otros apartados"
+          ]},
+          { type: "h3", text: "Planteamiento del problema" },
+          { type: "ul", items: [
+            "Plantea brevemente el problema/necesidad detectada",
+            "¿Cómo se podría solucionar?",
+            "¿Qué es lo que se propone? (objetivos en términos generales)",
+            "El tema debe tener vinculación directa con <strong>ingeniería de software, desarrollo web y/o ciberseguridad</strong>"
+          ]},
+          { type: "h3", text: "Estructura del trabajo" },
+          { type: "p", text: "Describe brevemente lo que vas a contar en cada uno de los capítulos siguientes." }
+        ]
+      },
+      {
+        name: "Contexto y estado del arte",
+        sub: "Estudio en profundidad del dominio con abundantes referencias",
+        content: [
+          { type: "p", text: "Uno o dos capítulos en los que se estudia a fondo el dominio de aplicación, <strong>citando numerosas referencias</strong>. Extensión: <strong>10 a 15 páginas</strong>." },
+          { type: "ul", items: [
+            "Revisa los <strong>estudios actuales</strong> publicados en la línea elegida",
+            "Consulta <strong>diferentes fuentes</strong> (artículos, libros, congresos…)",
+            "Incluye los <strong>autores de referencia</strong>; si excluyes alguno, justifícalo",
+            "Organiza en <strong>secciones y subapartados</strong> para facilitar la lectura",
+            "Concluye con un <strong>resumen de conclusiones</strong> del estudio y cómo afectan al desarrollo"
+          ]},
+          { type: "tip", text: "Evita que todas las referencias sean solo enlaces de internet. Debe haber variabilidad: libros, congresos, artículos y enlaces puntuales." }
+        ]
+      },
+      {
+        name: "Objetivos y metodología",
+        sub: "Objetivo general SMART, objetivos específicos y plan de trabajo",
+        content: [
+          { type: "p", text: "Este apartado es el <strong>puente entre el estudio del dominio y la contribución</strong>. Debe contener: (1) objetivo general, (2) objetivos específicos y (3) metodología de trabajo." },
+          { type: "h3", text: "Objetivos SMART" },
+          { type: "p", text: "Es <strong>imprescindible</strong> que los objetivos sean SMART:" },
+          { type: "ul", items: [
+            "<strong>S</strong>pecific (Específico) — qué es exactamente lo que se quiere conseguir",
+            "<strong>M</strong>easurable (Medible) — medidas que determinen éxito/fracaso y progreso",
+            "<strong>A</strong>ttainable (Alcanzable) — viable con el esfuerzo, tiempo y recursos disponibles",
+            "<strong>R</strong>elevant (Relevante) — impacto demostrable, útil para un propósito concreto",
+            "<strong>T</strong>ime-Related (Temporal) — realizable en una fecha determinada"
+          ]},
+          { type: "h3", text: "Objetivo general" },
+          { type: "p", text: "No debe ser simplemente \"crear una herramienta\". Debe centrarse en conseguir un <strong>efecto observable</strong>." },
+          { type: "warn", text: "<strong>Ejemplo SMART:</strong> \"Mejorar el servicio de audio guía de un museo convirtiéndolo en una guía interactiva controlada por voz y valorada positivamente, un mínimo 4 sobre 5, por los visitantes del museo\"" },
+          { type: "h3", text: "Objetivos específicos" },
+          { type: "p", text: "División del objetivo general en pasos concretos. Se formulan con <strong>verbo en infinitivo</strong>: Analizar, Clasificar, Comparar, Desarrollar, Describir, Determinar, Explorar, Identificar, Medir, Verificar…" },
+          { type: "h3", text: "Metodología" },
+          { type: "p", text: "Describe qué pasos se van a dar, el porqué de cada paso, qué instrumentos se van a utilizar y cómo se van a analizar los resultados." }
+        ]
+      },
+      {
+        name: "Desarrollo de la contribución",
+        sub: "El núcleo del TFE: 3 tipos de trabajo con estructuras diferentes",
+        content: [
+          { type: "p", text: "Es la parte central del TFE. La estructura depende del <strong>tipo de trabajo</strong>:" },
+          { type: "h3", text: "Tipo 1 — Piloto experimental" },
+          { type: "ul", items: [
+            "Cap. 4: <strong>Descripción detallada del experimento</strong> — tecnologías, organización, participantes, técnicas de evaluación, instrumentos, análisis estadísticos",
+            "Cap. 5: <strong>Resultados</strong> — tablas, gráficas, datos relevantes. Exposición objetiva, sin valorar",
+            "Cap. 6: <strong>Discusión</strong> — relevancia de resultados, explicación de datos anómalos, datos particularmente relevantes"
+          ]},
+          { type: "h3", text: "Tipo 2 — Desarrollo de software" },
+          { type: "ul", items: [
+            "Cap. 4: <strong>Identificación de requisitos</strong> — problema a tratar, contexto de uso, idealmente con expertos",
+            "Cap. 5: <strong>Descripción de la herramienta</strong> — fases e hitos del desarrollo, diagramas de arquitectura, capturas de pantalla",
+            "Cap. 6: <strong>Evaluación</strong> — usabilidad y aplicabilidad, idealmente con usuarios expertos"
+          ]},
+          { type: "h3", text: "Tipo 3 — Comparativa de soluciones" },
+          { type: "ul", items: [
+            "Cap. 4: <strong>Planteamiento de la comparativa</strong> — soluciones alternativas, criterios de éxito, medidas a tomar",
+            "Cap. 5: <strong>Desarrollo de la comparativa</strong> — resultados detallados con gráficas y tablas",
+            "Cap. 6: <strong>Discusión y análisis</strong> — significado de resultados, ventajas y desventajas de cada solución"
+          ]},
+          { type: "tip", text: "Debe existir coherencia entre el planteamiento del problema, el estado del arte, los objetivos, el desarrollo y las conclusiones. Es un hilo continuo." }
+        ]
+      },
+      {
+        name: "Conclusiones y trabajo futuro",
+        sub: "Resumen final, grado de consecución de objetivos y líneas futuras",
+        content: [
+          { type: "p", text: "Último capítulo. Informa del <strong>alcance y relevancia</strong> de tu aportación." },
+          { type: "ul", items: [
+            "Empieza con un <strong>resumen del problema</strong>, cómo se ha abordado y por qué la solución es válida",
+            "Incluye un <strong>resumen de contribuciones</strong> relacionándolas con los objetivos planteados",
+            "Discute hasta qué punto has conseguido <strong>resolver cada objetivo</strong>",
+            "Cada objetivo del trabajo debe enlazarse con una conclusión",
+            "Dedica un apartado a <strong>líneas de trabajo futuro</strong>: perspectivas que abre tu trabajo, en qué campos puede emplearse"
+          ]},
+          { type: "warn", text: "Las conclusiones deben ser <strong>consecuencia del trabajo realizado</strong> y marcar el grado de consecución de cada objetivo propuesto." }
+        ]
+      },
+      {
+        name: "Referencias bibliográficas",
+        sub: "Formato APA, variedad de fuentes y herramientas de búsqueda",
+        content: [
+          { type: "ul", items: [
+            "Usa un <strong>gestor bibliográfico</strong> (Endnote, Refworks, Mendeley) con formato APA",
+            "Comprueba que aparecen <strong>todas las referencias citadas</strong> en el texto",
+            "Autores ordenados <strong>alfabéticamente</strong> por apellidos",
+            "Cursivas, páginas, años y ciudades de edición correctos",
+            "<strong>Evita citas a Wikipedia</strong>",
+            "Variedad de fuentes: libros, artículos de congreso, revistas y enlaces puntuales"
+          ]},
+          { type: "h3", text: "Herramientas de búsqueda" },
+          { type: "ul", items: [
+            "<strong>Google Scholar</strong>, Mendeley, ResearchGate — mejor que Google genérico",
+            "Dialnet (Universidad de La Rioja)",
+            "ERIC (Education Resources Information Center)",
+            "Biblioteca UCM (CompluDoc)",
+            "Repositorio Universidad de Salamanca (GREDOS)",
+            "Latindex (bases de datos iberoamericanas)",
+            "TESEO (tesis doctorales)"
+          ]},
+          { type: "tip", text: "Busca con calma, contrasta fuentes. Construye un buen registro de lo que consultas: autor, página, URL y fecha de consulta." }
+        ]
+      },
+      {
+        name: "Anexos e índice de acrónimos",
+        sub: "Material complementario que no es esencial en el cuerpo del trabajo",
+        content: [
+          { type: "h3", text: "Anexos" },
+          { type: "ul", items: [
+            "Contenido complementario: encuestas, resultados de pilotos, capturas, código…",
+            "Se numeran con letra: <strong>Anexo A, Anexo B…</strong> (cada uno en página diferente)",
+            "<strong>No computan</strong> en la extensión del trabajo"
+          ]},
+          { type: "h3", text: "Anexo A — Código fuente y datos" },
+          { type: "ul", items: [
+            "Incluye la <strong>URL del repositorio</strong> con el código fuente",
+            "Debes ser el <strong>único autor</strong> y propietario del repositorio",
+            "No debe haber commits de otros usuarios",
+            "Si es proyecto de empresa, justifica la confidencialidad"
+          ]},
+          { type: "h3", text: "Índice de acrónimos" },
+          { type: "p", text: "Apartado <strong>opcional</strong> donde se listan los acrónimos utilizados a lo largo del trabajo." }
+        ]
+      }
+    ]
+  }
+];
+
+let active = null;
+let flat = [];
+
+function init() {
+  flat = [];
+  DATA.forEach(cat => {
+    cat.items.forEach(item => {
+      flat.push({ cat: cat.cat, ref: item });
+    });
+  });
+  render();
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { active = null; render(); }
+    if (active !== null) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); nav(1); }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); nav(-1); }
+    }
+  });
+}
+
+function render() {
+  renderMenu();
+  renderPanel();
+  document.body.classList.toggle('panel-open', active !== null);
+}
+
+function renderMenu() {
+  const m = document.getElementById('menu');
+  m.innerHTML = '';
+
+  const hdr = document.createElement('div');
+  hdr.className = 'menu-header';
+  hdr.innerHTML = `<h1>Instrucciones TFE</h1><p>Máster en Inteligencia Artificial — UNIR<br>Guía de consulta rápida para estudiantes</p>`;
+  m.appendChild(hdr);
+
+  const backBtn = document.createElement('a');
+  backBtn.href = '/';
+  backBtn.className = 'back-btn';
+  backBtn.innerHTML = '&#8592; Volver a las guías';
+  m.appendChild(backBtn);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'menu-items';
+
+  let lastCat = '';
+  let gi = 0;
+  DATA.forEach(cat => {
+    cat.items.forEach((item, i) => {
+      const idx = gi++;
+      if (cat.cat !== lastCat) {
+        lastCat = cat.cat;
+        const cl = document.createElement('div');
+        cl.className = 'cat-label';
+        cl.textContent = cat.cat;
+        wrap.appendChild(cl);
+      }
+      const btn = document.createElement('button');
+      btn.className = 'menu-btn' + (active === idx ? ' active' : '');
+      btn.onclick = () => { active = (active === idx ? null : idx); render(); document.getElementById('menu').classList.remove('open'); };
+      btn.innerHTML = `
+        <span class="btn-num">${idx + 1}</span>
+        <span class="btn-text">
+          <span class="btn-name">${item.name}</span>
+          <span class="btn-sub">${item.sub}</span>
+        </span>
+        <span class="btn-arrow">&rarr;</span>
+      `;
+      wrap.appendChild(btn);
+    });
+  });
+  m.appendChild(wrap);
+
+  const dl = document.createElement('div');
+  dl.className = 'menu-download';
+  dl.innerHTML = `<a href="instrucciones.pdf" download="instrucciones.pdf" target="_blank">&#8615; Descargar instrucciones original (PDF)</a>`;
+  m.appendChild(dl);
+}
+
+function renderPanel() {
+  const p = document.getElementById('panel');
+  if (active === null) { p.innerHTML = ''; return; }
+
+  const f = flat[active];
+  const item = f.ref;
+
+  let bodyHTML = '';
+  for (const block of item.content) {
+    if (block.type === 'p') {
+      bodyHTML += `<div class="block"><p>${block.text}</p></div>`;
+    } else if (block.type === 'h3') {
+      bodyHTML += `<div class="block block-heading"><h3>${block.text}</h3></div>`;
+    } else if (block.type === 'ul') {
+      bodyHTML += `<div class="block"><ul>${block.items.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
+    } else if (block.type === 'ol') {
+      bodyHTML += `<div class="block"><ol>${block.items.map(i => `<li>${i}</li>`).join('')}</ol></div>`;
+    } else if (block.type === 'tip') {
+      bodyHTML += `<div class="block block-tip"><p>${block.text}</p></div>`;
+    } else if (block.type === 'warn') {
+      bodyHTML += `<div class="block block-warn"><p>${block.text}</p></div>`;
+    } else if (block.type === 'format') {
+      bodyHTML += `<div class="block"><dl class="block-format">${block.items.map(([k,v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl></div>`;
+    }
+  }
+
+  p.innerHTML = `
+    <div class="panel-header">
+      <h2>${item.name}</h2>
+      <span class="p-cat">${f.cat}</span>
+      <button class="close-btn" onclick="active=null;render()">&times;</button>
+    </div>
+    <div class="panel-body">${bodyHTML}</div>
+    <div class="panel-footer">
+      <button class="panel-nav" onclick="nav(-1)" ${active <= 0 ? 'disabled' : ''}>&larr; Anterior</button>
+      <span class="panel-counter">${active + 1} / ${flat.length}</span>
+      <button class="panel-nav" onclick="nav(1)" ${active >= flat.length - 1 ? 'disabled' : ''}>Siguiente &rarr;</button>
+    </div>
+  `;
+}
+
+function nav(dir) {
+  const next = active + dir;
+  if (next >= 0 && next < flat.length) {
+    active = next;
+    render();
+  }
+}
+
+init();
+document.getElementById('hamburger').addEventListener('click', () => document.getElementById('menu').classList.toggle('open'));
+</script>
+</body>
+</html>
