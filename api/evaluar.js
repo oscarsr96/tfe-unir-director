@@ -18,8 +18,7 @@ Referencias (ref) deben apuntar al documento concreto:
 
 La nota global = media de las 4 secciones. Se riguroso. Cita paginas concretas.`;
 
-const MAX_RETRIES = 4;
-const INITIAL_DELAY_MS = 15000; // 15s — enough to let the rate limit window reset
+const MAX_RETRIES = 5;
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -29,13 +28,6 @@ async function callClaudeWithRetry(apiKey, fileBase64, fileMediaType) {
   let lastError;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    if (attempt > 0) {
-      // Exponential backoff: 15s, 30s, 60s, 60s
-      const delay = Math.min(INITIAL_DELAY_MS * Math.pow(2, attempt - 1), 60000);
-      console.log(`Retry ${attempt}/${MAX_RETRIES} after ${delay / 1000}s...`);
-      await sleep(delay);
-    }
-
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -61,20 +53,31 @@ async function callClaudeWithRetry(apiKey, fileBase64, fileMediaType) {
         }),
       });
 
-      // Rate limit — retry
-      if (response.status === 429) {
-        const retryAfter = response.headers.get('retry-after');
-        lastError = new Error(`Rate limit (intento ${attempt + 1}/${MAX_RETRIES + 1})`);
-        if (retryAfter && attempt < MAX_RETRIES) {
-          await sleep(parseInt(retryAfter, 10) * 1000);
-          continue;
+      // Rate limit or overloaded — wait for the exact reset time from headers
+      if (response.status === 429 || response.status === 529) {
+        if (attempt >= MAX_RETRIES) {
+          const body = await response.text();
+          throw new Error(`Rate limit tras ${MAX_RETRIES + 1} intentos. Espera 1 minuto y reintenta.`);
         }
-        continue;
-      }
 
-      // Overloaded — retry
-      if (response.status === 529) {
-        lastError = new Error(`API sobrecargada (intento ${attempt + 1}/${MAX_RETRIES + 1})`);
+        // Calculate wait time from headers
+        let waitMs = 10000; // default 10s
+        const retryAfter = response.headers.get('retry-after');
+        const resetTime = response.headers.get('anthropic-ratelimit-input-tokens-reset');
+
+        if (retryAfter) {
+          waitMs = parseInt(retryAfter, 10) * 1000;
+        } else if (resetTime) {
+          const resetDate = new Date(resetTime);
+          waitMs = Math.max(resetDate.getTime() - Date.now() + 1000, 2000); // +1s buffer
+        }
+
+        // Cap wait to avoid function timeout (max 60s per wait)
+        waitMs = Math.min(waitMs, 60000);
+
+        console.log(`Attempt ${attempt + 1}: rate limited, waiting ${Math.round(waitMs / 1000)}s until reset`);
+        lastError = new Error(`Rate limit (intento ${attempt + 1})`);
+        await sleep(waitMs);
         continue;
       }
 
@@ -91,30 +94,27 @@ async function callClaudeWithRetry(apiKey, fileBase64, fileMediaType) {
       const start = jsonStr.indexOf('{');
       const end = jsonStr.lastIndexOf('}');
       if (start === -1 || end === -1) {
-        lastError = new Error('Respuesta sin JSON');
-        continue; // retry — model might give valid JSON on next attempt
+        if (attempt < MAX_RETRIES) { lastError = new Error('Respuesta sin JSON'); continue; }
+        throw new Error('La IA no devolvio JSON. Intentalo de nuevo.');
       }
       jsonStr = jsonStr.substring(start, end + 1);
 
-      const parsed = JSON.parse(jsonStr); // throws if invalid
+      const parsed = JSON.parse(jsonStr);
       parsed._retries = attempt;
       return parsed;
 
     } catch (err) {
       lastError = err;
-      // JSON parse errors — worth retrying
       if (err instanceof SyntaxError && attempt < MAX_RETRIES) continue;
-      // Other errors — don't retry
       if (!(err.message || '').includes('Rate limit') &&
-          !(err.message || '').includes('sobrecargada') &&
-          !(err.message || '').includes('JSON') &&
+          !(err.message || '').includes('intento') &&
           !(err instanceof SyntaxError)) {
         throw err;
       }
     }
   }
 
-  throw lastError || new Error('Max retries exceeded');
+  throw lastError || new Error('Max retries. Espera 1 minuto y reintenta.');
 }
 
 export default async function handler(req, res) {
