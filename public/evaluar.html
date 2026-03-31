@@ -399,23 +399,24 @@ function downloadPDF() {
   function txt(s) { return String(s || '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>'); }
 
   // Header
-  doc.setFillColor(15, 23, 42);
+  doc.setFillColor(240, 243, 248);
   doc.rect(0, 0, W, 40, 'F');
-  doc.setTextColor(241, 245, 249);
+  doc.setTextColor(30, 30, 30);
   doc.setFontSize(18);
   doc.setFont(undefined, 'bold');
   doc.text('Autoevaluacion TFE - Entrega 1', M, 18);
   doc.setFontSize(9);
   doc.setFont(undefined, 'normal');
-  doc.setTextColor(148, 163, 184);
+  doc.setTextColor(100, 100, 100);
   doc.text('Master en Inteligencia Artificial - UNIR | ' + new Date().toLocaleDateString('es-ES'), M, 26);
   doc.text('Herramienta orientativa. La evaluacion final la realiza la comision evaluadora.', M, 32);
   y = 50;
 
   // Score
   const color = d.nota >= 7 ? [34,197,94] : d.nota >= 5 ? [245,158,11] : [239,68,68];
-  doc.setFillColor(30, 41, 59);
-  doc.roundedRect(M, y, CW, 30, 3, 3, 'F');
+  doc.setFillColor(245, 247, 250);
+  doc.setDrawColor(220, 220, 220);
+  doc.roundedRect(M, y, CW, 30, 3, 3, 'FD');
   doc.setFontSize(28);
   doc.setFont(undefined, 'bold');
   doc.setTextColor(...color);
@@ -424,10 +425,53 @@ function downloadPDF() {
   doc.text(d.dictamen + ' - ' + getBand(d.nota), M + 35, y + 14);
   doc.setFontSize(9);
   doc.setFont(undefined, 'normal');
-  doc.setTextColor(148, 163, 184);
+  doc.setTextColor(100, 100, 100);
   const resLines = doc.splitTextToSize(txt(d.resumen), CW - 45);
   doc.text(resLines, M + 35, y + 20);
   y += 38;
+
+  // Helper: render a colored feedback block with proper line wrapping
+  function renderBlock(fillColor, drawColor, labelColor, label, items) {
+    if (!items?.length) return;
+    const PAD = 5;
+    const TW = CW - PAD - 4;
+    doc.setFontSize(8);
+    const parsed = items.map(item => {
+      const t = txt(typeof item === 'string' ? item : item.texto);
+      doc.setFontSize(8);
+      const lines = doc.splitTextToSize(t, TW);
+      let refLines = [];
+      if (item.ref) { doc.setFontSize(7); refLines = doc.splitTextToSize(txt(item.ref), TW - 2); }
+      return { lines, refLines };
+    });
+    const lineH = 3.5;
+    let blockH = 6;
+    parsed.forEach(p => { blockH += p.lines.length * lineH + p.refLines.length * 3 + 3; });
+    blockH += 2;
+    checkPage(blockH + 4);
+    doc.setFillColor(...fillColor);
+    doc.setDrawColor(...drawColor);
+    doc.roundedRect(M, y, CW, blockH, 1, 1, 'FD');
+    doc.setFontSize(7);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(...labelColor);
+    doc.text(label, M + PAD, y + 4.5);
+    doc.setFont(undefined, 'normal');
+    let cy = y + 8;
+    parsed.forEach(p => {
+      doc.setFontSize(8);
+      doc.setTextColor(50, 50, 50);
+      p.lines.forEach(l => { doc.text(l, M + PAD, cy); cy += lineH; });
+      if (p.refLines.length) {
+        cy += 0.5;
+        doc.setFontSize(7);
+        doc.setTextColor(59, 130, 246);
+        p.refLines.forEach(l => { doc.text(l, M + PAD + 2, cy); cy += 3; });
+      }
+      cy += 2;
+    });
+    y += blockH + 3;
+  }
 
   // Sections
   if (d.secciones) {
@@ -436,87 +480,64 @@ function downloadPDF() {
       const sc = s.nota >= 7 ? [34,197,94] : s.nota >= 5 ? [245,158,11] : [239,68,68];
 
       // Section header
-      doc.setFillColor(30, 41, 59);
+      doc.setFillColor(235, 238, 245);
       doc.roundedRect(M, y, CW, 8, 2, 2, 'F');
       doc.setFontSize(10);
       doc.setFont(undefined, 'bold');
-      doc.setTextColor(241, 245, 249);
-      doc.text(txt(s.nombre), M + 3, y + 5.5);
+      doc.setTextColor(30, 30, 30);
+      doc.text(txt(s.nombre), M + 5, y + 5.5);
       doc.setTextColor(...sc);
       doc.text(s.nota.toFixed(1), M + CW - 12, y + 5.5);
       y += 12;
-
-      // Positivos
-      if (s.positivos?.length) {
-        checkPage(8 + s.positivos.length * 5);
-        doc.setFillColor(34, 197, 94, 20);
-        doc.setDrawColor(34, 197, 94);
-        const bh = 4 + s.positivos.length * 5;
-        doc.roundedRect(M, y, CW, bh, 1, 1, 'FD');
-        doc.setFontSize(7);
-        doc.setFont(undefined, 'bold');
-        doc.setTextColor(34, 197, 94);
-        doc.text('ASPECTOS POSITIVOS', M + 3, y + 4);
-        doc.setFont(undefined, 'normal');
-        doc.setTextColor(80, 80, 80);
+        if (!items?.length) return;
+        const PAD = 5; // left padding for text inside block
+        const TW = CW - PAD - 4; // text width
         doc.setFontSize(8);
-        s.positivos.forEach((p, i) => { doc.text('- ' + txt(p), M + 3, y + 8 + i * 5, { maxWidth: CW - 6 }); });
-        y += bh + 3;
-      }
-
-      // Mejoras
-      if (s.mejoras?.length) {
-        checkPage(8 + s.mejoras.length * 7);
-        doc.setFillColor(245, 158, 11, 20);
-        doc.setDrawColor(245, 158, 11);
-        let mh = 4;
-        const mejoraTexts = s.mejoras.map(m => {
-          const t = txt(typeof m === 'string' ? m : m.texto);
-          const lines = doc.splitTextToSize('- ' + t, CW - 6);
-          const refLines = m.ref ? doc.splitTextToSize(txt(m.ref), CW - 8) : [];
-          mh += lines.length * 4 + refLines.length * 3.5 + 2;
+        // Pre-calculate all line heights
+        const parsed = items.map(item => {
+          const t = txt(typeof item === 'string' ? item : item.texto);
+          doc.setFontSize(8);
+          const lines = doc.splitTextToSize(t, TW);
+          let refLines = [];
+          if (item.ref) { doc.setFontSize(7); refLines = doc.splitTextToSize(txt(item.ref), TW - 2); }
           return { lines, refLines };
         });
-        doc.roundedRect(M, y, CW, mh, 1, 1, 'FD');
+        const lineH = 3.5;
+        let blockH = 6; // label height
+        parsed.forEach(p => { blockH += p.lines.length * lineH + p.refLines.length * 3 + 3; });
+        blockH += 2; // bottom padding
+
+        checkPage(blockH + 4);
+        doc.setFillColor(...fillColor);
+        doc.setDrawColor(...drawColor);
+        doc.roundedRect(M, y, CW, blockH, 1, 1, 'FD');
         doc.setFontSize(7);
         doc.setFont(undefined, 'bold');
-        doc.setTextColor(245, 158, 11);
-        doc.text('SUGERENCIAS DE MEJORA', M + 3, y + 4);
+        doc.setTextColor(...labelColor);
+        doc.text(label, M + PAD, y + 4.5);
         doc.setFont(undefined, 'normal');
-        let my = y + 8;
-        mejoraTexts.forEach(({ lines, refLines }) => {
+        let cy = y + 8;
+        parsed.forEach(p => {
           doc.setFontSize(8);
-          doc.setTextColor(80, 80, 80);
-          doc.text(lines, M + 3, my);
-          my += lines.length * 4;
-          if (refLines.length) {
+          doc.setTextColor(50, 50, 50);
+          p.lines.forEach(l => { doc.text(l, M + PAD, cy); cy += lineH; });
+          if (p.refLines.length) {
+            cy += 0.5;
             doc.setFontSize(7);
             doc.setTextColor(59, 130, 246);
-            doc.text(refLines, M + 5, my);
-            my += refLines.length * 3.5;
+            p.refLines.forEach(l => { doc.text(l, M + PAD + 2, cy); cy += 3; });
           }
-          my += 1;
+          cy += 2;
         });
-        y += mh + 3;
+        y += blockH + 3;
       }
 
-      // Urgente
-      if (s.urgente?.length) {
-        checkPage(8 + s.urgente.length * 6);
-        doc.setFillColor(239, 68, 68, 20);
-        doc.setDrawColor(239, 68, 68);
-        const uh = 4 + s.urgente.length * 6;
-        doc.roundedRect(M, y, CW, uh, 1, 1, 'FD');
-        doc.setFontSize(7);
-        doc.setFont(undefined, 'bold');
-        doc.setTextColor(239, 68, 68);
-        doc.text('URGE CORREGIR', M + 3, y + 4);
-        doc.setFont(undefined, 'normal');
-        doc.setTextColor(80, 80, 80);
-        doc.setFontSize(8);
-        s.urgente.forEach((u, i) => { doc.text('- ' + txt(typeof u === 'string' ? u : u.texto), M + 3, y + 8 + i * 6, { maxWidth: CW - 6 }); });
-        y += uh + 3;
-      }
+      renderBlock([232,250,237], [34,197,94], [34,197,94], 'ASPECTOS POSITIVOS',
+        (s.positivos||[]).map(p => typeof p==='string' ? {texto:'- '+p} : {texto:'- '+p.texto, ref:p.ref}));
+      renderBlock([255,247,230], [245,158,11], [200,130,0], 'SUGERENCIAS DE MEJORA',
+        (s.mejoras||[]).map(m => typeof m==='string' ? {texto:'- '+m} : {texto:'- '+m.texto, ref:m.ref}));
+      renderBlock([254,235,235], [239,68,68], [239,68,68], 'URGE CORREGIR',
+        (s.urgente||[]).map(u => typeof u==='string' ? {texto:'- '+u} : {texto:'- '+u.texto, ref:u.ref}));
 
       y += 3;
     });
@@ -525,11 +546,11 @@ function downloadPDF() {
   // Checklist
   if (d.checklist?.length) {
     checkPage(10 + d.checklist.length * 6);
-    doc.setFillColor(30, 41, 59);
+    doc.setFillColor(235, 238, 245);
     doc.roundedRect(M, y, CW, 8, 2, 2, 'F');
     doc.setFontSize(10);
     doc.setFont(undefined, 'bold');
-    doc.setTextColor(241, 245, 249);
+    doc.setTextColor(30, 30, 30);
     doc.text('Checklist', M + 3, y + 5.5);
     y += 12;
     d.checklist.forEach(c => {
@@ -540,7 +561,7 @@ function downloadPDF() {
       else { doc.setTextColor(239, 68, 68); doc.text('\u2717', M + 2, y); }
       doc.setTextColor(60, 60, 60);
       doc.text(txt(c.criterio), M + 8, y);
-      if (c.comentario) { doc.setTextColor(148, 163, 184); doc.setFontSize(7); doc.text(txt(c.comentario), M + 8, y + 3.5, { maxWidth: CW - 10 }); y += 3.5; }
+      if (c.comentario) { doc.setTextColor(120, 120, 120); doc.setFontSize(7); doc.text(txt(c.comentario), M + 8, y + 3.5, { maxWidth: CW - 10 }); y += 3.5; }
       y += 5;
     });
     y += 3;
@@ -548,46 +569,43 @@ function downloadPDF() {
 
   // Priorities
   if (d.prioridades?.length) {
-    checkPage(10 + d.prioridades.length * 8);
-    doc.setFillColor(30, 41, 59);
+    doc.setFontSize(8);
+    const prioLines = d.prioridades.map((p, i) => {
+      const t = txt(typeof p === 'string' ? p : p.texto);
+      const lines = doc.splitTextToSize((i+1) + '. ' + t, CW - 10);
+      let refL = [];
+      if (p.ref) { doc.setFontSize(7); refL = doc.splitTextToSize(txt(p.ref), CW - 14); doc.setFontSize(8); }
+      return { lines, refL };
+    });
+    const prioH = 8 + prioLines.reduce((s, p) => s + p.lines.length * 3.5 + p.refL.length * 3 + 3, 0) + 2;
+    checkPage(prioH);
+    doc.setFillColor(235, 238, 245);
     doc.roundedRect(M, y, CW, 8, 2, 2, 'F');
     doc.setFontSize(10);
     doc.setFont(undefined, 'bold');
-    doc.setTextColor(241, 245, 249);
-    doc.text('Prioridades para la Entrega 2', M + 3, y + 5.5);
+    doc.setTextColor(30, 30, 30);
+    doc.text('Prioridades para la Entrega 2', M + 5, y + 5.5);
     y += 12;
-    d.prioridades.forEach((p, i) => {
-      checkPage(10);
+    prioLines.forEach(({ lines, refL }) => {
       doc.setFontSize(8);
-      doc.setFont(undefined, 'bold');
-      doc.setTextColor(59, 130, 246);
-      doc.text((i + 1) + '.', M + 2, y);
       doc.setFont(undefined, 'normal');
-      doc.setTextColor(60, 60, 60);
-      const pTxt = txt(typeof p === 'string' ? p : p.texto);
-      const pLines = doc.splitTextToSize(pTxt, CW - 12);
-      doc.text(pLines, M + 8, y);
-      y += pLines.length * 4;
-      if (p.ref) { doc.setFontSize(7); doc.setTextColor(59, 130, 246); doc.text(txt(p.ref), M + 8, y); y += 3.5; }
+      doc.setTextColor(50, 50, 50);
+      lines.forEach(l => { doc.text(l, M + 5, y); y += 3.5; });
+      if (refL.length) {
+        y += 0.5;
+        doc.setFontSize(7);
+        doc.setTextColor(59, 130, 246);
+        refL.forEach(l => { doc.text(l, M + 7, y); y += 3; });
+      }
       y += 2;
     });
+    y += 2;
   }
 
   // Alerts
   if (d.alertas?.length) {
-    checkPage(10 + d.alertas.length * 5);
-    doc.setFillColor(239, 68, 68, 20);
-    doc.setDrawColor(239, 68, 68);
-    const ah = 4 + d.alertas.length * 5;
-    doc.roundedRect(M, y, CW, ah, 1, 1, 'FD');
-    doc.setFontSize(7);
-    doc.setFont(undefined, 'bold');
-    doc.setTextColor(239, 68, 68);
-    doc.text('ALERTAS', M + 3, y + 4);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(80, 80, 80);
-    doc.setFontSize(8);
-    d.alertas.forEach((a, i) => { doc.text('- ' + txt(a), M + 3, y + 8 + i * 5, { maxWidth: CW - 6 }); });
+    renderBlock([254,235,235], [239,68,68], [239,68,68], 'ALERTAS',
+      d.alertas.map(a => ({ texto: '- ' + (typeof a === 'string' ? a : a.texto) })));
   }
 
   doc.save('autoevaluacion-entrega1.pdf');
