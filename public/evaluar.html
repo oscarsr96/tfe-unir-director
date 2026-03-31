@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autoevaluaci&oacute;n &mdash; UNIR</title>
+<style>
+  :root {
+    --bg: #0f172a; --card: #1e293b; --border: #334155;
+    --text: #f1f5f9; --muted: #94a3b8;
+    --accent: #3b82f6; --accent2: #60a5fa;
+    --green: #22c55e; --green-bg: rgba(34,197,94,.08);
+    --orange: #f59e0b; --orange-bg: rgba(245,158,11,.08);
+    --red: #ef4444; --red-bg: rgba(239,68,68,.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+
+  .header { width: 100%; max-width: 800px; padding: 2.5rem 1.5rem 1rem; }
+  .back { color: var(--muted); text-decoration: none; font-size: .85rem; display: inline-flex; align-items: center; gap: .4rem; margin-bottom: 1rem; }
+  .back:hover { color: var(--accent2); }
+  .header h1 { font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header p { font-size: .9rem; color: var(--muted); margin-top: .3rem; line-height: 1.5; }
+
+  .container { width: 100%; max-width: 800px; padding: 0 1.5rem 3rem; display: flex; flex-direction: column; gap: 1.25rem; }
+
+  /* Upload */
+  .step { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+  .step-label { display: flex; align-items: center; gap: .6rem; font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--accent2); margin-bottom: .75rem; }
+  .upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; transition: all .2s; position: relative; }
+  .upload-area:hover { border-color: var(--accent); background: rgba(59,130,246,.03); }
+  .upload-area.has-file { border-color: var(--green); border-style: solid; background: var(--green-bg); }
+  .upload-icon { font-size: 2rem; margin-bottom: .5rem; }
+  .upload-text { font-size: .9rem; color: var(--muted); }
+  .upload-text strong { color: var(--accent2); }
+  .file-name { font-size: .85rem; color: var(--green); font-weight: 600; margin-top: .5rem; }
+  .upload-area input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+  .submit-btn { width: 100%; padding: 1rem; border: none; border-radius: 10px; background: var(--accent); color: white; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all .15s; }
+  .submit-btn:hover:not(:disabled) { background: #2563eb; }
+  .submit-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* Progress */
+  .progress { display: none; text-align: center; padding: 2rem 0; }
+  .progress.active { display: block; }
+  .progress-ring { position: relative; width: 100px; height: 100px; margin: 0 auto 1rem; }
+  .progress-ring svg { transform: rotate(-90deg); }
+  .progress-ring circle { fill: none; stroke-width: 6; }
+  .progress-ring .track { stroke: var(--border); }
+  .progress-ring .fill { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset .3s; }
+  .progress-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 800; color: var(--accent2); }
+  .progress-text { font-size: .85rem; color: var(--muted); }
+
+  /* Error */
+  .error { display: none; background: var(--red-bg); border: 1px solid rgba(239,68,68,.3); border-radius: 10px; padding: 1rem; color: #fca5a5; font-size: .9rem; }
+  .error.active { display: block; }
+
+  /* Results */
+  .results { display: none; flex-direction: column; gap: 1rem; }
+  .results.active { display: flex; }
+
+  /* Score card */
+  .score-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; text-align: center; }
+  .score-ring { position: relative; width: 140px; height: 140px; margin: 0 auto 1rem; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring circle { fill: none; stroke-width: 8; }
+  .score-ring .track { stroke: var(--border); }
+  .score-ring .score-fill { stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+  .score-value { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .score-num { font-size: 2.5rem; font-weight: 900; }
+  .score-label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .score-dictamen { font-size: 1.1rem; font-weight: 700; margin-top: .5rem; padding: .3rem 1rem; border-radius: 8px; display: inline-block; }
+  .score-resumen { font-size: .9rem; color: var(--muted); margin-top: .75rem; line-height: 1.5; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+  /* Section modules */
+  .module { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .module-header { padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: background .15s; }
+  .module-header:hover { background: rgba(255,255,255,.02); }
+  .module-title { font-size: .95rem; font-weight: 700; }
+  .module-nota { font-size: .85rem; font-weight: 800; padding: .2rem .6rem; border-radius: 6px; }
+  .module-body { display: none; padding: 0 1.25rem 1.25rem; }
+  .module.open .module-body { display: block; }
+  .module-chevron { color: var(--muted); transition: transform .2s; font-size: .8rem; }
+  .module.open .module-chevron { transform: rotate(180deg); }
+
+  /* Feedback blocks */
+  .fb-block { border-radius: 8px; padding: .75rem 1rem; margin: .5rem 0; font-size: .85rem; line-height: 1.6; }
+  .fb-green { background: var(--green-bg); border-left: 3px solid var(--green); }
+  .fb-green .fb-label { color: var(--green); }
+  .fb-orange { background: var(--orange-bg); border-left: 3px solid var(--orange); }
+  .fb-orange .fb-label { color: var(--orange); }
+  .fb-red { background: var(--red-bg); border-left: 3px solid var(--red); }
+  .fb-red .fb-label { color: var(--red); }
+  .fb-label { font-weight: 700; font-size: .75rem; text-transform: uppercase; letter-spacing: .03em; margin-bottom: .3rem; }
+  .fb-item { color: #cbd5e1; margin: .25rem 0; }
+  .fb-ref { font-size: .75rem; color: var(--accent2); display: inline-block; margin-top: .15rem; background: rgba(59,130,246,.1); padding: .1rem .4rem; border-radius: 4px; }
+
+  /* Checklist */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding: .4rem 0; font-size: .85rem; display: flex; align-items: flex-start; gap: .5rem; border-bottom: 1px solid rgba(51,65,85,.5); }
+  .checklist li:last-child { border: none; }
+  .check-icon { flex-shrink: 0; width: 20px; height: 20px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 800; margin-top: .1rem; }
+  .check-ok { background: var(--green-bg); color: var(--green); }
+  .check-no { background: var(--red-bg); color: var(--red); }
+
+  /* Priorities & alerts */
+  .prio-list { list-style: none; padding: 0; counter-reset: prio; }
+  .prio-item { padding: .6rem 0; border-bottom: 1px solid rgba(51,65,85,.5); font-size: .85rem; display: flex; gap: .6rem; }
+  .prio-item:last-child { border: none; }
+  .prio-num { counter-increment: prio; flex-shrink: 0; width: 24px; height: 24px; border-radius: 6px; background: rgba(59,130,246,.15); color: var(--accent2); display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 800; }
+  .prio-num::after { content: counter(prio); }
+
+  .actions { display: flex; gap: .5rem; justify-content: center; }
+  .action-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted); padding: .5rem 1rem; border-radius: 8px; font-size: .8rem; cursor: pointer; transition: all .15s; }
+  .action-btn:hover { color: var(--text); border-color: #475569; }
+
+  footer { margin-top: auto; text-align: center; padding: 1.5rem; font-size: .75rem; color: #475569; border-top: 1px solid var(--border); width: 100%; }
+  footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="/" class="back">&larr; Volver a las gu&iacute;as</a>
+  <h1>Autoevaluaci&oacute;n</h1>
+  <p>Sube tu primera entrega y obt&eacute;n feedback instant&aacute;neo basado en la r&uacute;brica oficial del TFE.</p>
+</div>
+
+<div class="container" id="mainContainer">
+
+  <div class="step" id="uploadStep">
+    <div class="step-label">Sube tu documento (Entrega 1 &mdash; PDF)</div>
+    <div class="upload-area" id="uploadArea">
+      <div class="upload-icon">&#128196;</div>
+      <div class="upload-text">Arrastra tu PDF aqu&iacute; o <strong>haz clic</strong> para seleccionarlo</div>
+      <div class="file-name" id="fileName"></div>
+      <input type="file" id="fileInput" accept=".pdf">
+    </div>
+  </div>
+
+  <button class="submit-btn" id="submitBtn" disabled>Evaluar documento</button>
+
+  <div class="progress" id="progress">
+    <div class="progress-ring">
+      <svg width="100" height="100"><circle class="track" cx="50" cy="50" r="44"/><circle class="fill" id="progressFill" cx="50" cy="50" r="44" stroke-dasharray="276.46" stroke-dashoffset="276.46"/></svg>
+      <div class="progress-pct" id="progressPct">0%</div>
+    </div>
+    <div class="progress-text" id="progressText">Enviando documento...</div>
+    <div class="progress-text" style="margin-top:.5rem;font-size:.75rem;color:#475569" id="progressSub"></div>
+  </div>
+
+  <div class="error" id="error"></div>
+
+  <div class="results" id="results"></div>
+
+</div>
+
+<footer>
+  M&aacute;ster Universitario en Inteligencia Artificial &mdash; <a href="https://www.unir.net" target="_blank">UNIR</a>
+  <br>Herramienta orientativa. La evaluaci&oacute;n final la realiza la comisi&oacute;n evaluadora.
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+let fileData = null;
+let lastResult = null;
+
+// File upload
+const fileInput = document.getElementById('fileInput');
+const uploadArea = document.getElementById('uploadArea');
+
+fileInput.addEventListener('change', handleFile);
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.style.borderColor = 'var(--accent)'; });
+uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = ''; });
+uploadArea.addEventListener('drop', e => { e.preventDefault(); uploadArea.style.borderColor = ''; if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; handleFile(); } });
+
+function handleFile() {
+  const file = fileInput.files[0];
+  if (!file) return;
+  if (file.type !== 'application/pdf') { showError('Solo se aceptan archivos PDF.'); return; }
+  if (file.size > 20 * 1024 * 1024) { showError('El archivo es demasiado grande (max 20MB).'); return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    fileData = { base64: reader.result.split(',')[1], mediaType: 'application/pdf' };
+    uploadArea.classList.add('has-file');
+    document.getElementById('fileName').textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(1) + ' MB)';
+    document.getElementById('submitBtn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Progress — time-based (not fake percentage)
+let progressInterval;
+function startProgress() {
+  const fill = document.getElementById('progressFill');
+  const pct = document.getElementById('progressPct');
+  const txt = document.getElementById('progressText');
+  const sub = document.getElementById('progressSub');
+  const circumference = 276.46;
+  const startTime = Date.now();
+  // Expected duration ~45s, max ~120s
+  // Progress follows: p = 95 * (1 - e^(-t/40)) — reaches 95% at ~120s
+  sub.textContent = '';
+  sub.style.color = 'var(--muted)';
+
+  progressInterval = setInterval(() => {
+    const elapsed = (Date.now() - startTime) / 1000;
+    // Smooth curve that never reaches 95% but spreads over full duration
+    const p = 95 * (1 - Math.exp(-elapsed / 40));
+    fill.style.strokeDashoffset = circumference - (circumference * p / 100);
+    pct.textContent = Math.round(p) + '%';
+
+    // Time-based messages
+    if (elapsed < 5) {
+      txt.textContent = 'Enviando documento...';
+    } else if (elapsed < 15) {
+      txt.textContent = 'Analizando el documento...';
+      sub.textContent = '';
+    } else if (elapsed < 30) {
+      txt.textContent = 'Evaluando contenido...';
+      sub.textContent = 'Esto suele tardar entre 20 y 40 segundos.';
+    } else if (elapsed < 50) {
+      txt.textContent = 'Generando feedback detallado...';
+      sub.textContent = Math.round(elapsed) + 's — casi listo.';
+    } else if (elapsed < 75) {
+      txt.textContent = 'Tardando mas de lo habitual...';
+      sub.textContent = Math.round(elapsed) + 's — probablemente hay cola. Se reintenta automaticamente.';
+      sub.style.color = 'var(--orange)';
+    } else {
+      txt.textContent = 'Reintentando por alta demanda...';
+      sub.textContent = Math.round(elapsed) + 's — tu solicitud esta en cola. No cierres la pagina.';
+      sub.style.color = 'var(--orange)';
+    }
+  }, 300);
+}
+function finishProgress() {
+  clearInterval(progressInterval);
+  const fill = document.getElementById('progressFill');
+  const pct = document.getElementById('progressPct');
+  const txt = document.getElementById('progressText');
+  const sub = document.getElementById('progressSub');
+  fill.style.strokeDashoffset = '0';
+  pct.textContent = '100%';
+  txt.textContent = 'Completado';
+  sub.textContent = '';
+}
+
+// Submit
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  document.getElementById('error').classList.remove('active');
+  document.getElementById('results').classList.remove('active');
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('progress').classList.add('active');
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('uploadStep').style.display = 'none';
+  startProgress();
+
+  try {
+    const res = await fetch('/api/evaluar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo: 'entrega-1', fileBase64: fileData.base64, fileMediaType: fileData.mediaType }),
+    });
+
+    finishProgress();
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ error: 'Error desconocido' }));
+      throw new Error(errData.error || 'Error ' + res.status);
+    }
+
+    let data;
+    try {
+      data = await res.json();
+    } catch (e) {
+      throw new Error('La respuesta no es JSON valido. Intentalo de nuevo.');
+    }
+
+    if (data.error) throw new Error(data.error);
+    if (!data.nota && data.nota !== 0) throw new Error('Respuesta incompleta. Intentalo de nuevo.');
+
+    lastResult = data;
+    setTimeout(() => {
+      document.getElementById('progress').classList.remove('active');
+      renderResults(data);
+    }, 500);
+
+  } catch (err) {
+    clearInterval(progressInterval);
+    document.getElementById('progress').classList.remove('active');
+    document.getElementById('uploadStep').style.display = '';
+    document.getElementById('submitBtn').disabled = false;
+    showError(err.message);
+  }
+});
+
+function showError(msg) {
+  const el = document.getElementById('error');
+  el.textContent = msg;
+  el.classList.add('active');
+}
+
+function getColor(nota) {
+  if (nota >= 7) return 'var(--green)';
+  if (nota >= 5) return 'var(--orange)';
+  return 'var(--red)';
+}
+
+function getBand(nota) {
+  if (nota >= 9) return 'Sobresaliente';
+  if (nota >= 7) return 'Notable';
+  if (nota >= 5) return 'Aprobado';
+  return 'Suspenso';
+}
+
+function renderResults(d) {
+  const c = document.getElementById('results');
+  const color = getColor(d.nota);
+  const circumference = 2 * Math.PI * 60;
+  const offset = circumference - (circumference * d.nota / 10);
+
+  let html = '';
+
+  // Score card + actions + retry info
+  html += `<div class="score-card">
+    <div class="score-ring">
+      <svg width="140" height="140"><circle class="track" cx="70" cy="70" r="60"/><circle class="score-fill" cx="70" cy="70" r="60" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" style="stroke:${color}"/></svg>
+      <div class="score-value"><span class="score-num" style="color:${color}">${d.nota.toFixed(1)}</span><span class="score-label">sobre 10</span></div>
+    </div>
+    <div class="score-dictamen" style="background:${color}20;color:${color}">${d.dictamen} &mdash; ${getBand(d.nota)}</div>
+    <div class="score-resumen">${esc(d.resumen)}</div>
+    ${d._retries ? `<div style="font-size:.75rem;color:var(--muted);margin-top:.5rem">Evaluacion completada tras ${d._retries} reintento${d._retries > 1 ? 's' : ''} (alta demanda)</div>` : ''}
+    <div class="actions" style="margin-top:1rem">
+      <button class="action-btn" onclick="downloadPDF()">Descargar PDF</button>
+      <button class="action-btn" onclick="location.reload()">Nueva evaluaci&oacute;n</button>
+    </div>
+  </div>`;
+
+  // Section modules
+  if (d.secciones) {
+    d.secciones.forEach((s, i) => {
+      const sc = getColor(s.nota);
+      html += `<div class="module${i === 0 ? ' open' : ''}" onclick="this.classList.toggle('open')">
+        <div class="module-header">
+          <span class="module-title">${esc(s.nombre)}</span>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <span class="module-nota" style="background:${sc}20;color:${sc}">${s.nota.toFixed(1)}</span>
+            <span class="module-chevron">&#9660;</span>
+          </div>
+        </div>
+        <div class="module-body">
+          ${s.positivos?.length ? `<div class="fb-block fb-green"><div class="fb-label">Aspectos positivos</div>${s.positivos.map(p => `<div class="fb-item">&bull; ${esc(p)}</div>`).join('')}</div>` : ''}
+          ${s.mejoras?.length ? `<div class="fb-block fb-orange"><div class="fb-label">Sugerencias de mejora</div>${s.mejoras.map(m => `<div class="fb-item">&bull; ${esc(typeof m === 'string' ? m : m.texto)}${m.ref ? `<br><span class="fb-ref">${esc(m.ref)}</span>` : ''}</div>`).join('')}</div>` : ''}
+          ${s.urgente?.length ? `<div class="fb-block fb-red"><div class="fb-label">Urge corregir</div>${s.urgente.map(u => `<div class="fb-item">&bull; ${esc(typeof u === 'string' ? u : u.texto)}${u.ref ? `<br><span class="fb-ref">${esc(u.ref)}</span>` : ''}</div>`).join('')}</div>` : ''}
+        </div>
+      </div>`;
+    });
+  }
+
+  // Checklist
+  if (d.checklist?.length) {
+    html += `<div class="module open"><div class="module-header" onclick="this.parentElement.classList.toggle('open')"><span class="module-title">Checklist</span><span class="module-chevron">&#9660;</span></div><div class="module-body"><ul class="checklist">`;
+    d.checklist.forEach(c => {
+      html += `<li><span class="check-icon ${c.cumple ? 'check-ok' : 'check-no'}">${c.cumple ? '&#10003;' : '&#10007;'}</span><div><span>${esc(c.criterio)}</span>${c.comentario ? `<br><span style="font-size:.78rem;color:var(--muted)">${esc(c.comentario)}</span>` : ''}</div></li>`;
+    });
+    html += `</ul></div></div>`;
+  }
+
+  // Priorities
+  if (d.prioridades?.length) {
+    html += `<div class="module open"><div class="module-header" onclick="this.parentElement.classList.toggle('open')"><span class="module-title">Prioridades para la Entrega 2</span><span class="module-chevron">&#9660;</span></div><div class="module-body"><ol class="prio-list">`;
+    d.prioridades.forEach(p => {
+      html += `<li class="prio-item"><span class="prio-num"></span><div>${esc(typeof p === 'string' ? p : p.texto)}${p.ref ? `<br><span class="fb-ref">${esc(p.ref)}</span>` : ''}</div></li>`;
+    });
+    html += `</ol></div></div>`;
+  }
+
+  // Alerts
+  if (d.alertas?.length) {
+    html += `<div class="fb-block fb-red" style="margin:0"><div class="fb-label">Alertas</div>${d.alertas.map(a => `<div class="fb-item">&bull; ${esc(a)}</div>`).join('')}</div>`;
+  }
+
+
+  c.innerHTML = html;
+  c.classList.add('active');
+}
+
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function downloadPDF() {
+  if (!lastResult) return;
+  const d = lastResult;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = 210, M = 18, CW = W - 2 * M;
+  let y = 20;
+
+  function checkPage(need) { if (y + need > 280) { doc.addPage(); y = 20; } }
+  function txt(s) { return String(s || '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>'); }
+
+  // Header
+  doc.setFillColor(15, 23, 42);
+  doc.rect(0, 0, W, 40, 'F');
+  doc.setTextColor(241, 245, 249);
+  doc.setFontSize(18);
+  doc.setFont(undefined, 'bold');
+  doc.text('Autoevaluacion TFE - Entrega 1', M, 18);
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(148, 163, 184);
+  doc.text('Master en Inteligencia Artificial - UNIR | ' + new Date().toLocaleDateString('es-ES'), M, 26);
+  doc.text('Herramienta orientativa. La evaluacion final la realiza la comision evaluadora.', M, 32);
+  y = 50;
+
+  // Score
+  const color = d.nota >= 7 ? [34,197,94] : d.nota >= 5 ? [245,158,11] : [239,68,68];
+  doc.setFillColor(30, 41, 59);
+  doc.roundedRect(M, y, CW, 30, 3, 3, 'F');
+  doc.setFontSize(28);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(...color);
+  doc.text(d.nota.toFixed(1), M + 10, y + 20);
+  doc.setFontSize(10);
+  doc.text(d.dictamen + ' - ' + getBand(d.nota), M + 35, y + 14);
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(148, 163, 184);
+  const resLines = doc.splitTextToSize(txt(d.resumen), CW - 45);
+  doc.text(resLines, M + 35, y + 20);
+  y += 38;
+
+  // Sections
+  if (d.secciones) {
+    d.secciones.forEach(s => {
+      checkPage(40);
+      const sc = s.nota >= 7 ? [34,197,94] : s.nota >= 5 ? [245,158,11] : [239,68,68];
+
+      // Section header
+      doc.setFillColor(30, 41, 59);
+      doc.roundedRect(M, y, CW, 8, 2, 2, 'F');
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(241, 245, 249);
+      doc.text(txt(s.nombre), M + 3, y + 5.5);
+      doc.setTextColor(...sc);
+      doc.text(s.nota.toFixed(1), M + CW - 12, y + 5.5);
+      y += 12;
+
+      // Positivos
+      if (s.positivos?.length) {
+        checkPage(8 + s.positivos.length * 5);
+        doc.setFillColor(34, 197, 94, 20);
+        doc.setDrawColor(34, 197, 94);
+        const bh = 4 + s.positivos.length * 5;
+        doc.roundedRect(M, y, CW, bh, 1, 1, 'FD');
+        doc.setFontSize(7);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(34, 197, 94);
+        doc.text('ASPECTOS POSITIVOS', M + 3, y + 4);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(80, 80, 80);
+        doc.setFontSize(8);
+        s.positivos.forEach((p, i) => { doc.text('- ' + txt(p), M + 3, y + 8 + i * 5, { maxWidth: CW - 6 }); });
+        y += bh + 3;
+      }
+
+      // Mejoras
+      if (s.mejoras?.length) {
+        checkPage(8 + s.mejoras.length * 7);
+        doc.setFillColor(245, 158, 11, 20);
+        doc.setDrawColor(245, 158, 11);
+        let mh = 4;
+        const mejoraTexts = s.mejoras.map(m => {
+          const t = txt(typeof m === 'string' ? m : m.texto);
+          const lines = doc.splitTextToSize('- ' + t, CW - 6);
+          const refLines = m.ref ? doc.splitTextToSize(txt(m.ref), CW - 8) : [];
+          mh += lines.length * 4 + refLines.length * 3.5 + 2;
+          return { lines, refLines };
+        });
+        doc.roundedRect(M, y, CW, mh, 1, 1, 'FD');
+        doc.setFontSize(7);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(245, 158, 11);
+        doc.text('SUGERENCIAS DE MEJORA', M + 3, y + 4);
+        doc.setFont(undefined, 'normal');
+        let my = y + 8;
+        mejoraTexts.forEach(({ lines, refLines }) => {
+          doc.setFontSize(8);
+          doc.setTextColor(80, 80, 80);
+          doc.text(lines, M + 3, my);
+          my += lines.length * 4;
+          if (refLines.length) {
+            doc.setFontSize(7);
+            doc.setTextColor(59, 130, 246);
+            doc.text(refLines, M + 5, my);
+            my += refLines.length * 3.5;
+          }
+          my += 1;
+        });
+        y += mh + 3;
+      }
+
+      // Urgente
+      if (s.urgente?.length) {
+        checkPage(8 + s.urgente.length * 6);
+        doc.setFillColor(239, 68, 68, 20);
+        doc.setDrawColor(239, 68, 68);
+        const uh = 4 + s.urgente.length * 6;
+        doc.roundedRect(M, y, CW, uh, 1, 1, 'FD');
+        doc.setFontSize(7);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(239, 68, 68);
+        doc.text('URGE CORREGIR', M + 3, y + 4);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(80, 80, 80);
+        doc.setFontSize(8);
+        s.urgente.forEach((u, i) => { doc.text('- ' + txt(typeof u === 'string' ? u : u.texto), M + 3, y + 8 + i * 6, { maxWidth: CW - 6 }); });
+        y += uh + 3;
+      }
+
+      y += 3;
+    });
+  }
+
+  // Checklist
+  if (d.checklist?.length) {
+    checkPage(10 + d.checklist.length * 6);
+    doc.setFillColor(30, 41, 59);
+    doc.roundedRect(M, y, CW, 8, 2, 2, 'F');
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(241, 245, 249);
+    doc.text('Checklist', M + 3, y + 5.5);
+    y += 12;
+    d.checklist.forEach(c => {
+      checkPage(6);
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      if (c.cumple) { doc.setTextColor(34, 197, 94); doc.text('\u2713', M + 2, y); }
+      else { doc.setTextColor(239, 68, 68); doc.text('\u2717', M + 2, y); }
+      doc.setTextColor(60, 60, 60);
+      doc.text(txt(c.criterio), M + 8, y);
+      if (c.comentario) { doc.setTextColor(148, 163, 184); doc.setFontSize(7); doc.text(txt(c.comentario), M + 8, y + 3.5, { maxWidth: CW - 10 }); y += 3.5; }
+      y += 5;
+    });
+    y += 3;
+  }
+
+  // Priorities
+  if (d.prioridades?.length) {
+    checkPage(10 + d.prioridades.length * 8);
+    doc.setFillColor(30, 41, 59);
+    doc.roundedRect(M, y, CW, 8, 2, 2, 'F');
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(241, 245, 249);
+    doc.text('Prioridades para la Entrega 2', M + 3, y + 5.5);
+    y += 12;
+    d.prioridades.forEach((p, i) => {
+      checkPage(10);
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(59, 130, 246);
+      doc.text((i + 1) + '.', M + 2, y);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(60, 60, 60);
+      const pTxt = txt(typeof p === 'string' ? p : p.texto);
+      const pLines = doc.splitTextToSize(pTxt, CW - 12);
+      doc.text(pLines, M + 8, y);
+      y += pLines.length * 4;
+      if (p.ref) { doc.setFontSize(7); doc.setTextColor(59, 130, 246); doc.text(txt(p.ref), M + 8, y); y += 3.5; }
+      y += 2;
+    });
+  }
+
+  // Alerts
+  if (d.alertas?.length) {
+    checkPage(10 + d.alertas.length * 5);
+    doc.setFillColor(239, 68, 68, 20);
+    doc.setDrawColor(239, 68, 68);
+    const ah = 4 + d.alertas.length * 5;
+    doc.roundedRect(M, y, CW, ah, 1, 1, 'FD');
+    doc.setFontSize(7);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(239, 68, 68);
+    doc.text('ALERTAS', M + 3, y + 4);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(8);
+    d.alertas.forEach((a, i) => { doc.text('- ' + txt(a), M + 3, y + 8 + i * 5, { maxWidth: CW - 6 }); });
+  }
+
+  doc.save('autoevaluacion-entrega1.pdf');
+}
+</script>
+</body>
+</html>

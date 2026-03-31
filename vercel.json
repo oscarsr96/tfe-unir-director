@@ -1,0 +1,13 @@
+{
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "functions": {
+    "api/evaluar.js": {
+      "maxDuration": 120,
+      "memory": 1024
+    }
+  },
+  "rewrites": [
+    { "source": "/api/evaluar", "destination": "/api/evaluar" }
+  ]
+}
