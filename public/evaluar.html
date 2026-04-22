@@ -559,7 +559,6 @@
       evaluadora.
     </footer>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script>
       let fileData = null;
@@ -805,7 +804,7 @@
           <div class="score-resumen">${esc(d.resumen)}</div>
           ${d._retries ? `<div style="font-size:.75rem;color:var(--muted);margin-top:.5rem">Evaluacion completada tras ${d._retries} reintento${d._retries > 1 ? "s" : ""} (alta demanda)</div>` : ""}
           <div class="actions" style="margin-top:1rem">
-            <button class="action-btn" onclick="downloadPDF()">Descargar PDF</button>
+            <button class="action-btn" onclick="downloadPDF(this)">Descargar PDF</button>
             <button class="action-btn" onclick="location.reload()">Nueva evaluaci&oacute;n</button>
           </div>
         </div>`;
@@ -865,290 +864,632 @@
           .replace(/>/g, "&gt;");
       }
 
-      function downloadPDF() {
-        if (!lastResult) return;
-        const d = lastResult;
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: "mm", format: "a4" });
-        const W = 210,
-          M = 18,
-          CW = W - 2 * M;
-        let y = 20;
+      const PDF_COLORS = {
+        ink: "#0f172a",
+        body: "#1f2937",
+        muted: "#6b7280",
+        faint: "#9ca3af",
+        rule: "#e5e7eb",
+        softbg: "#f8fafc",
+        green: "#16a34a",
+        greenBg: "#ecfdf5",
+        greenDark: "#065f46",
+        orange: "#d97706",
+        orangeBg: "#fff7ed",
+        orangeDark: "#9a3412",
+        red: "#dc2626",
+        redBg: "#fef2f2",
+        redDark: "#991b1b",
+      };
 
-        function checkPage(need) {
-          if (y + need > 280) {
-            doc.addPage();
-            y = 20;
+      function pdfScoreColor(n) {
+        if (n >= 7) return PDF_COLORS.green;
+        if (n >= 5) return PDF_COLORS.orange;
+        return PDF_COLORS.red;
+      }
+      function pdfFmtNota(n) {
+        return typeof n === "number" ? n.toFixed(1) : "—";
+      }
+      function pdfUnesc(s) {
+        return String(s || "")
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">");
+      }
+
+      function ensurePdfMakeLoaded() {
+        if (window.pdfMake && window.pdfMake.vfs) return Promise.resolve();
+        const loadScript = (src) =>
+          new Promise((resolve, reject) => {
+            const s = document.createElement("script");
+            s.src = src;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error("No se pudo cargar " + src));
+            document.head.appendChild(s);
+          });
+        return loadScript(
+          "https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/pdfmake.min.js",
+        ).then(() =>
+          loadScript(
+            "https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/vfs_fonts.js",
+          ),
+        );
+      }
+
+      async function downloadPDF(btn) {
+        if (!lastResult) return;
+        const original = btn ? btn.textContent : null;
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Preparando PDF...";
+        }
+        try {
+          await ensurePdfMakeLoaded();
+          const def = buildPdfDocDefinition(lastResult);
+          await new Promise((resolve) => {
+            window.pdfMake
+              .createPdf(def)
+              .download("autoevaluacion-entrega1.pdf", resolve);
+          });
+        } catch (err) {
+          showError(
+            "No se ha podido generar el PDF: " +
+              (err && err.message ? err.message : err),
+          );
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = original;
           }
         }
-        function txt(s) {
-          return String(s || "")
-            .replace(/&amp;/g, "&")
-            .replace(/&lt;/g, "<")
-            .replace(/&gt;/g, ">");
-        }
+      }
 
-        // Header
-        doc.setFillColor(240, 243, 248);
-        doc.rect(0, 0, W, 40, "F");
-        doc.setTextColor(30, 30, 30);
-        doc.setFontSize(18);
-        doc.setFont(undefined, "bold");
-        doc.text("Autoevaluacion TFE - Entrega 1", M, 18);
-        doc.setFontSize(9);
-        doc.setFont(undefined, "normal");
-        doc.setTextColor(100, 100, 100);
-        doc.text(
-          "Master en Inteligencia Artificial - UNIR | " +
-            new Date().toLocaleDateString("es-ES"),
-          M,
-          26,
-        );
-        doc.text(
-          "Herramienta orientativa. La evaluacion final la realiza la comision evaluadora.",
-          M,
-          32,
-        );
-        y = 50;
+      function _pdf_feedbackGroup(
+        C,
+        label,
+        items,
+        barColor,
+        bgColor,
+        labelColor,
+      ) {
+        if (!items || !items.length) return null;
+        const bullets = items.map((item) => {
+          const isString = typeof item === "string";
+          const t = pdfUnesc(isString ? item : item.texto);
+          const ref = isString ? null : item.ref;
+          return {
+            stack: [
+              {
+                columns: [
+                  { text: "•", width: 10, color: barColor, bold: true },
+                  { text: t, fontSize: 10, color: C.body, lineHeight: 1.4 },
+                ],
+              },
+              ref
+                ? {
+                    text: pdfUnesc(ref),
+                    italics: true,
+                    fontSize: 8,
+                    color: C.muted,
+                    margin: [10, 1, 0, 0],
+                  }
+                : null,
+            ].filter(Boolean),
+            margin: [0, 2, 0, 3],
+          };
+        });
+        return {
+          table: {
+            widths: [2, "*"],
+            body: [
+              [
+                { text: "", fillColor: barColor },
+                {
+                  stack: [
+                    {
+                      text: label,
+                      fontSize: 8,
+                      bold: true,
+                      color: labelColor,
+                      characterSpacing: 1,
+                      margin: [0, 0, 0, 4],
+                    },
+                    ...bullets,
+                  ],
+                  fillColor: bgColor,
+                },
+              ],
+            ],
+          },
+          layout: {
+            defaultBorder: false,
+            paddingLeft: (i) => (i === 0 ? 0 : 10),
+            paddingRight: (i) => (i === 0 ? 0 : 10),
+            paddingTop: () => 6,
+            paddingBottom: () => 6,
+          },
+          margin: [0, 0, 0, 6],
+        };
+      }
 
-        // Score
-        const color =
-          d.nota >= 7
-            ? [34, 197, 94]
-            : d.nota >= 5
-              ? [245, 158, 11]
-              : [239, 68, 68];
-        doc.setFillColor(245, 247, 250);
-        doc.setDrawColor(220, 220, 220);
-        doc.roundedRect(M, y, CW, 30, 3, 3, "FD");
-        doc.setFontSize(28);
-        doc.setFont(undefined, "bold");
-        doc.setTextColor(...color);
-        doc.text(d.nota.toFixed(1), M + 10, y + 20);
-        doc.setFontSize(10);
-        doc.text(d.dictamen + " - " + getBand(d.nota), M + 35, y + 14);
-        doc.setFontSize(9);
-        doc.setFont(undefined, "normal");
-        doc.setTextColor(100, 100, 100);
-        const resLines = doc.splitTextToSize(txt(d.resumen), CW - 45);
-        doc.text(resLines, M + 35, y + 20);
-        y += 38;
+      function buildPdfDocDefinition(d) {
+        const C = PDF_COLORS;
+        const accent = pdfScoreColor(d.nota);
+        const band = getBand(d.nota);
+        const today = new Date().toLocaleDateString("es-ES", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
 
-        // Helper: render a colored feedback block with proper line wrapping
-        function renderBlock(fillColor, drawColor, labelColor, label, items) {
-          if (!items?.length) return;
-          const PAD = 5;
-          const TW = CW - PAD - 4;
-          doc.setFontSize(8);
-          const parsed = items.map((item) => {
-            const t = txt(typeof item === "string" ? item : item.texto);
-            doc.setFontSize(8);
-            const lines = doc.splitTextToSize(t, TW);
-            let refLines = [];
-            if (item.ref) {
-              doc.setFontSize(7);
-              refLines = doc.splitTextToSize(txt(item.ref), TW - 2);
-            }
-            return { lines, refLines };
+        const cover = [
+          {
+            text: "AUTOEVALUACIÓN · ENTREGA 1",
+            fontSize: 8,
+            bold: true,
+            color: C.muted,
+            characterSpacing: 1.5,
+          },
+          {
+            text: "Feedback del borrador inicial",
+            fontSize: 22,
+            bold: true,
+            color: C.ink,
+            margin: [0, 4, 0, 0],
+          },
+          {
+            columns: [
+              {
+                text: "Máster Universitario en Inteligencia Artificial · UNIR",
+                fontSize: 9,
+                color: C.muted,
+              },
+              { text: today, fontSize: 9, color: C.muted, alignment: "right" },
+            ],
+            margin: [0, 6, 0, 12],
+          },
+          {
+            canvas: [{ type: "rect", x: 0, y: 0, w: 495, h: 2, color: accent }],
+            margin: [0, 0, 0, 18],
+          },
+        ];
+
+        const hero = {
+          table: {
+            widths: [110, "*"],
+            body: [
+              [
+                {
+                  stack: [
+                    {
+                      text: pdfFmtNota(d.nota),
+                      fontSize: 54,
+                      bold: true,
+                      color: accent,
+                      alignment: "center",
+                      lineHeight: 1,
+                    },
+                    {
+                      text: "sobre 10",
+                      fontSize: 8,
+                      color: C.muted,
+                      alignment: "center",
+                      characterSpacing: 1,
+                      margin: [0, 2, 0, 0],
+                    },
+                  ],
+                  margin: [0, 10, 0, 10],
+                },
+                {
+                  stack: [
+                    {
+                      columns: [
+                        {
+                          width: "auto",
+                          text: d.dictamen || "—",
+                          color: accent,
+                          bold: true,
+                          fontSize: 14,
+                        },
+                        {
+                          width: "auto",
+                          text: "·",
+                          color: C.faint,
+                          margin: [6, 3, 6, 0],
+                          fontSize: 12,
+                        },
+                        {
+                          width: "auto",
+                          text: band,
+                          color: C.body,
+                          fontSize: 12,
+                          margin: [0, 3, 0, 0],
+                        },
+                      ],
+                    },
+                    {
+                      text: pdfUnesc(d.resumen || ""),
+                      fontSize: 10.5,
+                      color: C.body,
+                      lineHeight: 1.5,
+                      margin: [0, 8, 0, 0],
+                    },
+                    d._retries
+                      ? {
+                          text:
+                            "Evaluación completada tras " +
+                            d._retries +
+                            " reintento" +
+                            (d._retries > 1 ? "s" : "") +
+                            " por alta demanda.",
+                          fontSize: 8,
+                          italics: true,
+                          color: C.faint,
+                          margin: [0, 8, 0, 0],
+                        }
+                      : null,
+                  ].filter(Boolean),
+                  margin: [14, 12, 10, 10],
+                },
+              ],
+            ],
+          },
+          layout: {
+            defaultBorder: false,
+            fillColor: (rowIndex, node, columnIndex) =>
+              columnIndex === 0 ? C.softbg : null,
+          },
+          margin: [0, 0, 0, 18],
+        };
+
+        const summary =
+          d.secciones && d.secciones.length
+            ? {
+                stack: [
+                  {
+                    text: "Resumen por dimensiones",
+                    fontSize: 13,
+                    bold: true,
+                    color: C.ink,
+                    margin: [0, 0, 0, 6],
+                  },
+                  {
+                    table: {
+                      headerRows: 1,
+                      widths: ["*", 70],
+                      body: [
+                        [
+                          {
+                            text: "Dimensión",
+                            fontSize: 8,
+                            bold: true,
+                            color: C.muted,
+                            characterSpacing: 0.8,
+                          },
+                          {
+                            text: "Puntuación",
+                            fontSize: 8,
+                            bold: true,
+                            color: C.muted,
+                            characterSpacing: 0.8,
+                            alignment: "right",
+                          },
+                        ],
+                        ...d.secciones.map((s) => [
+                          {
+                            text: pdfUnesc(s.nombre),
+                            fontSize: 10,
+                            color: C.body,
+                            margin: [0, 3, 0, 3],
+                          },
+                          {
+                            text: pdfFmtNota(s.nota) + " / 10",
+                            fontSize: 10,
+                            bold: true,
+                            color: pdfScoreColor(s.nota),
+                            alignment: "right",
+                            margin: [0, 3, 0, 3],
+                          },
+                        ]),
+                      ],
+                    },
+                    layout: {
+                      hLineWidth: (i) => (i === 1 ? 0.8 : 0.3),
+                      vLineWidth: () => 0,
+                      hLineColor: (i) => (i === 1 ? C.ink : C.rule),
+                      paddingLeft: () => 2,
+                      paddingRight: () => 2,
+                      paddingTop: () => 4,
+                      paddingBottom: () => 4,
+                    },
+                  },
+                ],
+                margin: [0, 0, 0, 14],
+              }
+            : null;
+
+        const sectionsContent = [];
+        if (d.secciones && d.secciones.length) {
+          sectionsContent.push({
+            text: "Evaluación detallada",
+            fontSize: 13,
+            bold: true,
+            color: C.ink,
+            margin: [0, 4, 0, 10],
           });
-          const lineH = 3.5;
-          let blockH = 6;
-          parsed.forEach((p) => {
-            blockH += p.lines.length * lineH + p.refLines.length * 3 + 3;
-          });
-          blockH += 2;
-          checkPage(blockH + 4);
-          doc.setFillColor(...fillColor);
-          doc.setDrawColor(...drawColor);
-          doc.roundedRect(M, y, CW, blockH, 1, 1, "FD");
-          doc.setFontSize(7);
-          doc.setFont(undefined, "bold");
-          doc.setTextColor(...labelColor);
-          doc.text(label, M + PAD, y + 4.5);
-          doc.setFont(undefined, "normal");
-          let cy = y + 8;
-          parsed.forEach((p) => {
-            doc.setFontSize(8);
-            doc.setTextColor(50, 50, 50);
-            p.lines.forEach((l) => {
-              doc.text(l, M + PAD, cy);
-              cy += lineH;
+          d.secciones.forEach((s, idx) => {
+            const sColor = pdfScoreColor(s.nota);
+            sectionsContent.push({
+              unbreakable: true,
+              stack: [
+                {
+                  columns: [
+                    {
+                      text: pdfUnesc(s.nombre),
+                      fontSize: 12,
+                      bold: true,
+                      color: C.ink,
+                    },
+                    {
+                      text: pdfFmtNota(s.nota) + " / 10",
+                      color: sColor,
+                      bold: true,
+                      alignment: "right",
+                      fontSize: 11,
+                    },
+                  ],
+                  margin: [0, idx === 0 ? 0 : 4, 0, 6],
+                },
+                {
+                  canvas: [
+                    {
+                      type: "line",
+                      x1: 0,
+                      y1: 0,
+                      x2: 495,
+                      y2: 0,
+                      lineWidth: 0.5,
+                      lineColor: C.rule,
+                    },
+                  ],
+                  margin: [0, 0, 0, 6],
+                },
+              ],
             });
-            if (p.refLines.length) {
-              cy += 0.5;
-              doc.setFontSize(7);
-              doc.setTextColor(59, 130, 246);
-              p.refLines.forEach((l) => {
-                doc.text(l, M + PAD + 2, cy);
-                cy += 3;
-              });
-            }
-            cy += 2;
-          });
-          y += blockH + 3;
-        }
-
-        // Sections
-        if (d.secciones) {
-          d.secciones.forEach((s) => {
-            checkPage(40);
-            const sc =
-              s.nota >= 7
-                ? [34, 197, 94]
-                : s.nota >= 5
-                  ? [245, 158, 11]
-                  : [239, 68, 68];
-
-            // Section header
-            doc.setFillColor(235, 238, 245);
-            doc.roundedRect(M, y, CW, 8, 2, 2, "F");
-            doc.setFontSize(10);
-            doc.setFont(undefined, "bold");
-            doc.setTextColor(30, 30, 30);
-            doc.text(txt(s.nombre), M + 5, y + 5.5);
-            doc.setTextColor(...sc);
-            doc.text(s.nota.toFixed(1), M + CW - 12, y + 5.5);
-            y += 12;
-
-            renderBlock(
-              [232, 250, 237],
-              [34, 197, 94],
-              [34, 197, 94],
-              "ASPECTOS POSITIVOS",
-              (s.positivos || []).map((p) =>
-                typeof p === "string"
-                  ? { texto: "- " + p }
-                  : { texto: "- " + p.texto, ref: p.ref },
+            [
+              _pdf_feedbackGroup(
+                C,
+                "ASPECTOS POSITIVOS",
+                s.positivos,
+                C.green,
+                C.greenBg,
+                C.greenDark,
               ),
-            );
-            renderBlock(
-              [255, 247, 230],
-              [245, 158, 11],
-              [200, 130, 0],
-              "SUGERENCIAS DE MEJORA",
-              (s.mejoras || []).map((m) =>
-                typeof m === "string"
-                  ? { texto: "- " + m }
-                  : { texto: "- " + m.texto, ref: m.ref },
+              _pdf_feedbackGroup(
+                C,
+                "SUGERENCIAS DE MEJORA",
+                s.mejoras,
+                C.orange,
+                C.orangeBg,
+                C.orangeDark,
               ),
-            );
-            renderBlock(
-              [254, 235, 235],
-              [239, 68, 68],
-              [239, 68, 68],
-              "URGE CORREGIR",
-              (s.urgente || []).map((u) =>
-                typeof u === "string"
-                  ? { texto: "- " + u }
-                  : { texto: "- " + u.texto, ref: u.ref },
+              _pdf_feedbackGroup(
+                C,
+                "URGE CORREGIR",
+                s.urgente,
+                C.red,
+                C.redBg,
+                C.redDark,
               ),
-            );
-
-            y += 3;
+            ]
+              .filter(Boolean)
+              .forEach((b) => sectionsContent.push(b));
+            sectionsContent.push({ text: "", margin: [0, 0, 0, 6] });
           });
         }
 
-        // Checklist
-        if (d.checklist?.length) {
-          checkPage(10 + d.checklist.length * 6);
-          doc.setFillColor(235, 238, 245);
-          doc.roundedRect(M, y, CW, 8, 2, 2, "F");
-          doc.setFontSize(10);
-          doc.setFont(undefined, "bold");
-          doc.setTextColor(30, 30, 30);
-          doc.text("Checklist", M + 3, y + 5.5);
-          y += 12;
-          d.checklist.forEach((c) => {
-            checkPage(6);
-            doc.setFontSize(8);
-            doc.setFont(undefined, "normal");
-            if (c.cumple) {
-              doc.setTextColor(34, 197, 94);
-              doc.text("\u2713", M + 2, y);
-            } else {
-              doc.setTextColor(239, 68, 68);
-              doc.text("\u2717", M + 2, y);
-            }
-            doc.setTextColor(60, 60, 60);
-            doc.text(txt(c.criterio), M + 8, y);
-            if (c.comentario) {
-              doc.setTextColor(120, 120, 120);
-              doc.setFontSize(7);
-              doc.text(txt(c.comentario), M + 8, y + 3.5, {
-                maxWidth: CW - 10,
-              });
-              y += 3.5;
-            }
-            y += 5;
+        const checklistContent = [];
+        if (d.checklist && d.checklist.length) {
+          checklistContent.push({
+            text: "Checklist de requisitos",
+            fontSize: 13,
+            bold: true,
+            color: C.ink,
+            margin: [0, 4, 0, 8],
           });
-          y += 3;
+          checklistContent.push({
+            table: {
+              widths: [16, "*"],
+              body: d.checklist.map((c) => [
+                {
+                  text: c.cumple ? "✓" : "✗",
+                  color: c.cumple ? C.green : C.red,
+                  bold: true,
+                  fontSize: 12,
+                  alignment: "center",
+                  margin: [0, 2, 0, 0],
+                },
+                {
+                  stack: [
+                    { text: pdfUnesc(c.criterio), fontSize: 10, color: C.body },
+                    c.comentario
+                      ? {
+                          text: pdfUnesc(c.comentario),
+                          italics: true,
+                          fontSize: 9,
+                          color: C.muted,
+                          margin: [0, 2, 0, 0],
+                        }
+                      : null,
+                  ].filter(Boolean),
+                },
+              ]),
+            },
+            layout: {
+              defaultBorder: false,
+              hLineWidth: (i, node) =>
+                i === 0 || i === node.table.body.length ? 0 : 0.3,
+              hLineColor: () => C.rule,
+              paddingLeft: () => 2,
+              paddingRight: () => 2,
+              paddingTop: () => 6,
+              paddingBottom: () => 6,
+            },
+            margin: [0, 0, 0, 14],
+          });
         }
 
-        // Priorities
-        if (d.prioridades?.length) {
-          doc.setFontSize(8);
-          const prioLines = d.prioridades.map((p, i) => {
-            const t = txt(typeof p === "string" ? p : p.texto);
-            const lines = doc.splitTextToSize(i + 1 + ". " + t, CW - 10);
-            let refL = [];
-            if (p.ref) {
-              doc.setFontSize(7);
-              refL = doc.splitTextToSize(txt(p.ref), CW - 14);
-              doc.setFontSize(8);
-            }
-            return { lines, refL };
+        const prioContent = [];
+        if (d.prioridades && d.prioridades.length) {
+          prioContent.push({
+            text: "Prioridades para la Entrega 2",
+            fontSize: 13,
+            bold: true,
+            color: C.ink,
+            margin: [0, 4, 0, 8],
           });
-          const prioH =
-            8 +
-            prioLines.reduce(
-              (s, p) => s + p.lines.length * 3.5 + p.refL.length * 3 + 3,
-              0,
-            ) +
-            2;
-          checkPage(prioH);
-          doc.setFillColor(235, 238, 245);
-          doc.roundedRect(M, y, CW, 8, 2, 2, "F");
-          doc.setFontSize(10);
-          doc.setFont(undefined, "bold");
-          doc.setTextColor(30, 30, 30);
-          doc.text("Prioridades para la Entrega 2", M + 5, y + 5.5);
-          y += 12;
-          prioLines.forEach(({ lines, refL }) => {
-            doc.setFontSize(8);
-            doc.setFont(undefined, "normal");
-            doc.setTextColor(50, 50, 50);
-            lines.forEach((l) => {
-              doc.text(l, M + 5, y);
-              y += 3.5;
-            });
-            if (refL.length) {
-              y += 0.5;
-              doc.setFontSize(7);
-              doc.setTextColor(59, 130, 246);
-              refL.forEach((l) => {
-                doc.text(l, M + 7, y);
-                y += 3;
-              });
-            }
-            y += 2;
+          prioContent.push({
+            table: {
+              widths: [22, "*"],
+              body: d.prioridades.map((p, i) => {
+                const isString = typeof p === "string";
+                const t = pdfUnesc(isString ? p : p.texto);
+                const ref = isString ? null : p.ref;
+                return [
+                  {
+                    text: String(i + 1),
+                    color: accent,
+                    bold: true,
+                    fontSize: 12,
+                    alignment: "center",
+                    margin: [0, 2, 0, 0],
+                  },
+                  {
+                    stack: [
+                      { text: t, fontSize: 10, color: C.body, lineHeight: 1.4 },
+                      ref
+                        ? {
+                            text: pdfUnesc(ref),
+                            italics: true,
+                            fontSize: 8,
+                            color: C.muted,
+                            margin: [0, 2, 0, 0],
+                          }
+                        : null,
+                    ].filter(Boolean),
+                  },
+                ];
+              }),
+            },
+            layout: {
+              defaultBorder: false,
+              hLineWidth: (i, node) =>
+                i === 0 || i === node.table.body.length ? 0 : 0.3,
+              hLineColor: () => C.rule,
+              paddingLeft: () => 2,
+              paddingRight: () => 2,
+              paddingTop: () => 6,
+              paddingBottom: () => 6,
+            },
+            margin: [0, 0, 0, 14],
           });
-          y += 2;
         }
 
-        // Alerts
-        if (d.alertas?.length) {
-          renderBlock(
-            [254, 235, 235],
-            [239, 68, 68],
-            [239, 68, 68],
-            "ALERTAS",
-            d.alertas.map((a) => ({
-              texto: "- " + (typeof a === "string" ? a : a.texto),
-            })),
-          );
+        const alertasContent = [];
+        if (d.alertas && d.alertas.length) {
+          alertasContent.push({
+            text: "Alertas",
+            fontSize: 13,
+            bold: true,
+            color: C.ink,
+            margin: [0, 4, 0, 8],
+          });
+          const bullets = d.alertas.map((a) => {
+            const t = pdfUnesc(typeof a === "string" ? a : a.texto);
+            return {
+              columns: [
+                { text: "•", width: 10, color: C.red, bold: true },
+                { text: t, fontSize: 10, color: C.body, lineHeight: 1.4 },
+              ],
+              margin: [0, 2, 0, 3],
+            };
+          });
+          alertasContent.push({
+            table: {
+              widths: [2, "*"],
+              body: [
+                [
+                  { text: "", fillColor: C.red },
+                  { stack: bullets, fillColor: C.redBg },
+                ],
+              ],
+            },
+            layout: {
+              defaultBorder: false,
+              paddingLeft: (i) => (i === 0 ? 0 : 10),
+              paddingRight: (i) => (i === 0 ? 0 : 10),
+              paddingTop: () => 8,
+              paddingBottom: () => 8,
+            },
+          });
         }
 
-        doc.save("autoevaluacion-entrega1.pdf");
+        return {
+          pageSize: "A4",
+          pageMargins: [50, 60, 50, 56],
+          defaultStyle: { fontSize: 10, color: C.body, lineHeight: 1.4 },
+          info: {
+            title: "Autoevaluación TFE — Entrega 1",
+            author: "UNIR · Máster en Inteligencia Artificial",
+            subject: "Feedback automático del borrador inicial (Entrega 1)",
+            creator: "Herramienta de autoevaluación · UNIR",
+          },
+          header: (currentPage) => {
+            if (currentPage === 1) return null;
+            return {
+              margin: [50, 24, 50, 0],
+              columns: [
+                {
+                  text: "Autoevaluación TFE · Entrega 1",
+                  fontSize: 8,
+                  color: C.muted,
+                },
+                {
+                  text: "UNIR · Máster en IA",
+                  fontSize: 8,
+                  color: C.muted,
+                  alignment: "right",
+                },
+              ],
+            };
+          },
+          footer: (currentPage, pageCount) => ({
+            margin: [50, 0, 50, 20],
+            columns: [
+              {
+                text: "Herramienta orientativa. La evaluación final la realiza la comisión evaluadora.",
+                italics: true,
+                fontSize: 7.5,
+                color: C.faint,
+              },
+              {
+                text: currentPage + " / " + pageCount,
+                fontSize: 8,
+                color: C.muted,
+                alignment: "right",
+              },
+            ],
+          }),
+          content: [
+            ...cover,
+            hero,
+            summary,
+            ...sectionsContent,
+            ...checklistContent,
+            ...prioContent,
+            ...alertasContent,
+          ].filter(Boolean),
+        };
       }
     </script>
   </body>
