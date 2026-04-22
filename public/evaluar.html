@@ -871,6 +871,9 @@
         faint: "#9ca3af",
         rule: "#e5e7eb",
         softbg: "#f8fafc",
+        unir: "#0098cd",
+        unirDark: "#006c8f",
+        unirSoft: "#eaf7fb",
         green: "#16a34a",
         greenBg: "#ecfdf5",
         greenDark: "#065f46",
@@ -881,6 +884,19 @@
         redBg: "#fef2f2",
         redDark: "#991b1b",
       };
+
+      let _unirLogoSvg = null;
+      async function loadUnirLogo() {
+        if (_unirLogoSvg !== null) return _unirLogoSvg;
+        try {
+          const res = await fetch("/unir-logo.svg");
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          _unirLogoSvg = await res.text();
+        } catch {
+          _unirLogoSvg = "";
+        }
+        return _unirLogoSvg;
+      }
 
       function pdfScoreColor(n) {
         if (n >= 7) return PDF_COLORS.green;
@@ -924,8 +940,11 @@
           btn.textContent = "Preparando PDF...";
         }
         try {
-          await ensurePdfMakeLoaded();
-          const def = buildPdfDocDefinition(lastResult);
+          const [_, logoSvg] = await Promise.all([
+            ensurePdfMakeLoaded(),
+            loadUnirLogo(),
+          ]);
+          const def = buildPdfDocDefinition(lastResult, logoSvg);
           await new Promise((resolve) => {
             window.pdfMake
               .createPdf(def)
@@ -1012,7 +1031,7 @@
         };
       }
 
-      function buildPdfDocDefinition(d) {
+      function buildPdfDocDefinition(d, logoSvg) {
         const C = PDF_COLORS;
         const accent = pdfScoreColor(d.nota);
         const band = getBand(d.nota);
@@ -1024,18 +1043,36 @@
 
         const cover = [
           {
-            text: "AUTOEVALUACIÓN · ENTREGA 1",
-            fontSize: 8,
-            bold: true,
-            color: C.muted,
-            characterSpacing: 1.5,
-          },
-          {
-            text: "Feedback del borrador inicial",
-            fontSize: 22,
-            bold: true,
-            color: C.ink,
-            margin: [0, 4, 0, 0],
+            columns: [
+              {
+                width: "*",
+                stack: [
+                  {
+                    text: "AUTOEVALUACIÓN · ENTREGA 1",
+                    fontSize: 8,
+                    bold: true,
+                    color: C.unir,
+                    characterSpacing: 1.5,
+                  },
+                  {
+                    text: "Feedback del borrador inicial",
+                    fontSize: 22,
+                    bold: true,
+                    color: C.ink,
+                    margin: [0, 4, 0, 0],
+                  },
+                ],
+              },
+              logoSvg
+                ? {
+                    width: 85,
+                    svg: logoSvg,
+                    fit: [85, 30],
+                    alignment: "right",
+                    margin: [0, 2, 0, 0],
+                  }
+                : { width: 0, text: "" },
+            ],
           },
           {
             columns: [
@@ -1046,10 +1083,10 @@
               },
               { text: today, fontSize: 9, color: C.muted, alignment: "right" },
             ],
-            margin: [0, 6, 0, 12],
+            margin: [0, 10, 0, 10],
           },
           {
-            canvas: [{ type: "rect", x: 0, y: 0, w: 495, h: 2, color: accent }],
+            canvas: [{ type: "rect", x: 0, y: 0, w: 495, h: 2, color: C.unir }],
             margin: [0, 0, 0, 18],
           },
         ];
@@ -1150,7 +1187,7 @@
                     text: "Resumen por dimensiones",
                     fontSize: 13,
                     bold: true,
-                    color: C.ink,
+                    color: C.unir,
                     margin: [0, 0, 0, 6],
                   },
                   {
@@ -1196,7 +1233,7 @@
                     layout: {
                       hLineWidth: (i) => (i === 1 ? 0.8 : 0.3),
                       vLineWidth: () => 0,
-                      hLineColor: (i) => (i === 1 ? C.ink : C.rule),
+                      hLineColor: (i) => (i === 1 ? C.unir : C.rule),
                       paddingLeft: () => 2,
                       paddingRight: () => 2,
                       paddingTop: () => 4,
@@ -1214,7 +1251,7 @@
             text: "Evaluación detallada",
             fontSize: 13,
             bold: true,
-            color: C.ink,
+            color: C.unir,
             margin: [0, 4, 0, 10],
           });
           d.secciones.forEach((s, idx) => {
@@ -1294,7 +1331,7 @@
             text: "Checklist de requisitos",
             fontSize: 13,
             bold: true,
-            color: C.ink,
+            color: C.unir,
             margin: [0, 4, 0, 8],
           });
           checklistContent.push({
@@ -1345,7 +1382,7 @@
             text: "Prioridades para la Entrega 2",
             fontSize: 13,
             bold: true,
-            color: C.ink,
+            color: C.unir,
             margin: [0, 4, 0, 8],
           });
           prioContent.push({
@@ -1358,7 +1395,7 @@
                 return [
                   {
                     text: String(i + 1),
-                    color: accent,
+                    color: C.unir,
                     bold: true,
                     fontSize: 12,
                     alignment: "center",
@@ -1401,7 +1438,7 @@
             text: "Alertas",
             fontSize: 13,
             bold: true,
-            color: C.ink,
+            color: C.unir,
             margin: [0, 4, 0, 8],
           });
           const bullets = d.alertas.map((a) => {
