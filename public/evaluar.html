@@ -948,7 +948,7 @@
           await new Promise((resolve) => {
             window.pdfMake
               .createPdf(def)
-              .download("autoevaluacion-entrega1.pdf", resolve);
+              .download("informe-entrega1.pdf", resolve);
           });
         } catch (err) {
           showError(
@@ -1048,7 +1048,7 @@
                 width: "*",
                 stack: [
                   {
-                    text: "AUTOEVALUACIÓN · ENTREGA 1",
+                    text: "INFORME DE VALORACIÓN · ENTREGA 1",
                     fontSize: 8,
                     bold: true,
                     color: C.unir,
@@ -1476,10 +1476,10 @@
           pageMargins: [50, 60, 50, 56],
           defaultStyle: { fontSize: 10, color: C.body, lineHeight: 1.4 },
           info: {
-            title: "Autoevaluación TFE — Entrega 1",
+            title: "Informe de valoración — Entrega 1",
             author: "UNIR · Máster en Inteligencia Artificial",
-            subject: "Feedback automático del borrador inicial (Entrega 1)",
-            creator: "Herramienta de autoevaluación · UNIR",
+            subject: "Informe de valoración del borrador inicial (Entrega 1)",
+            creator: "UNIR · Máster en Inteligencia Artificial",
           },
           header: (currentPage) => {
             if (currentPage === 1) return null;
@@ -1487,7 +1487,7 @@
               margin: [50, 24, 50, 0],
               columns: [
                 {
-                  text: "Autoevaluación TFE · Entrega 1",
+                  text: "Informe de valoración · Entrega 1",
                   fontSize: 8,
                   color: C.muted,
                 },
@@ -1504,8 +1504,7 @@
             margin: [50, 0, 50, 20],
             columns: [
               {
-                text: "Herramienta orientativa. La evaluación final la realiza la comisión evaluadora.",
-                italics: true,
+                text: "UNIR · Máster Universitario en Inteligencia Artificial",
                 fontSize: 7.5,
                 color: C.faint,
               },
