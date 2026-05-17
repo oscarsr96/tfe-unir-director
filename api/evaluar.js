@@ -1,6 +1,6 @@
 export const config = { maxDuration: 120 };
 
-const SYSTEM_PROMPT = `Eres un evaluador experto de TFEs del Master en IA de la UNIR. Evalua la Entrega 1 (borrador inicial).
+const PROMPT_ENTREGA_1 = `Eres un evaluador experto de TFEs del Master en IA de la UNIR. Evalua la Entrega 1 (borrador inicial).
 
 Contenido esperado: analisis del contexto, estado del arte inicial, objetivos claros.
 Evalua: Estilo (formato, redaccion), Alcance (tema justificado), Marco Teorico (inicio del estado del arte), y formulacion de objetivos.
@@ -18,6 +18,52 @@ Referencias (ref) deben apuntar al documento concreto:
 
 La nota global = media de las 4 secciones. Se riguroso. Cita paginas concretas.`;
 
+const PROMPT_ENTREGA_2 = `Eres un evaluador experto de TFEs del Master en IA de la UNIR. Evalua la Entrega 2 (avance intermedio).
+
+Contexto: la Entrega 2 debe contener TODO lo de la Entrega 1 (contexto, estado del arte, objetivos) MAS un avance cuantitativo y cualitativo significativo de la contribucion. Debe demostrar que los objetivos son realistas y alcanzables.
+
+Evalua las 6 secciones de la rubrica (NO evalues Exposicion, eso es para la defensa) y aplica los PESOS oficiales de la rubrica al calcular la nota global ponderada normalizada a /10:
+- "Estilo y formato" (peso 10%)
+- "Estructura y apartados" (peso 10%)
+- "Alcance" (peso 10%)
+- "Marco teorico y referencias" (peso 10%)
+- "Desarrollo de la contribucion" (peso 20%, el de mayor peso del contenido)
+- "Objetivos y conclusiones" (peso 10%)
+
+Formula: nota = (s1 + s2 + s3 + s4 + 2*s5 + s6) / 7, redondeada a 1 decimal.
+
+Niveles de la rubrica que deben guiar cada nota seccional: Suspenso (0-4), Aprobado (5-6), Notable (7-8), Sobresaliente (9-10).
+
+SI penalizar:
+- Falta de avance visible respecto a Entrega 1 (debe verse contribucion propia).
+- Objetivos sin evidencia de viabilidad o realismo.
+- Desarrollo tecnico ausente, vago o no enlazado con los objetivos.
+- Marco teorico no actualizado o sin justificar las decisiones tecnicas.
+- Falta de metodologia o de descripcion del procedimiento.
+- Citas en formato no-APA, falta de coherencia o referencias huerfanas.
+
+NO penalizar en su totalidad:
+- Conclusiones definitivas o cierre (se redactan en Entrega 3).
+- Pulido final de redaccion / maquetacion (admite mejoras razonables).
+- Resultados finales completos (basta diseno, primeros resultados o desarrollo en curso).
+
+IMPORTANTE: Responde UNICAMENTE con JSON valido (sin markdown, sin backticks, sin texto antes ni despues):
+
+{"nota":7.5,"dictamen":"APTO","resumen":"Resumen de 2-3 frases que destaque avance vs Entrega 1.","secciones":[{"nombre":"Estilo y formato","nota":7.0,"positivos":["Punto 1"],"mejoras":[{"texto":"Mejora 1","ref":"Rubrica > Indicador 1: Estilo y formato academico"}],"urgente":[]},{"nombre":"Estructura y apartados","nota":7.0,"positivos":[],"mejoras":[],"urgente":[]},{"nombre":"Alcance","nota":7.0,"positivos":[],"mejoras":[],"urgente":[]},{"nombre":"Marco teorico y referencias","nota":7.0,"positivos":[],"mejoras":[],"urgente":[]},{"nombre":"Desarrollo de la contribucion","nota":6.5,"positivos":[],"mejoras":[],"urgente":[]},{"nombre":"Objetivos y conclusiones","nota":6.5,"positivos":[],"mejoras":[],"urgente":[]}],"checklist":[{"criterio":"Avance significativo de la contribucion vs Entrega 1","cumple":false,"comentario":""},{"criterio":"Metodologia / procedimiento descrito","cumple":true,"comentario":""},{"criterio":"Primeros resultados o diseno tecnico de la solucion","cumple":false,"comentario":""},{"criterio":"Objetivos validados como realistas y alcanzables","cumple":true,"comentario":""},{"criterio":"Marco teorico actualizado y justifica decisiones","cumple":true,"comentario":""},{"criterio":"Formato APA en citas y bibliografia coherente","cumple":false,"comentario":""},{"criterio":"Estructura con todos los apartados conectados","cumple":true,"comentario":""}],"prioridades":[{"texto":"Prioridad 1 hacia Entrega 3","ref":"Guia > Seccion 4.4: Tercera entrega"},{"texto":"Prioridad 2","ref":"Rubrica > Indicador 5: Desarrollo de la contribucion"}],"alertas":["Alerta 1"]}
+
+Referencias (ref) deben apuntar al documento concreto:
+- "Rubrica > Indicador X: [nombre]"
+- "Instrucciones > Seccion X.X: [nombre]"
+- "Guia > Seccion X.X: [nombre]"
+- "Reglamento > Articulo X: [nombre]"
+
+Las prioridades deben apuntar a Entrega 3 (trabajo finalizado). Se riguroso. Cita paginas concretas. La nota global DEBE seguir la formula ponderada anterior.`;
+
+const PROMPTS = {
+  "entrega-1": PROMPT_ENTREGA_1,
+  "entrega-2": PROMPT_ENTREGA_2,
+};
+
 const MAX_RETRIES = 5;
 
 async function sleep(ms) {
@@ -26,6 +72,8 @@ async function sleep(ms) {
 
 async function callClaudeWithRetry(apiKey, payload) {
   let lastError;
+
+  const systemPrompt = PROMPTS[payload.tipo];
 
   const userContent = payload.fileText
     ? [
@@ -63,7 +111,7 @@ async function callClaudeWithRetry(apiKey, payload) {
         body: JSON.stringify({
           model: "claude-haiku-4-5-20251001",
           max_tokens: 4096,
-          system: SYSTEM_PROMPT,
+          system: systemPrompt,
           messages: [{ role: "user", content: userContent }],
         }),
       });
@@ -152,16 +200,25 @@ export default async function handler(req, res) {
   if (!apiKey) return res.status(500).json({ error: "API key not configured" });
 
   try {
-    const { fileBase64, fileMediaType, fileText } = req.body || {};
+    const { fileBase64, fileMediaType, fileText, tipo } = req.body || {};
     if (!fileBase64 && !fileText)
       return res
         .status(400)
         .json({ error: "No se ha proporcionado un archivo" });
 
+    const tipoEntrega = tipo || "entrega-2";
+    if (!PROMPTS[tipoEntrega])
+      return res
+        .status(400)
+        .json({
+          error: `tipo invalido: ${tipoEntrega}. Usa entrega-1 o entrega-2.`,
+        });
+
     const result = await callClaudeWithRetry(apiKey, {
       fileBase64,
       fileMediaType,
       fileText,
+      tipo: tipoEntrega,
     });
 
     res.setHeader("Content-Type", "application/json");

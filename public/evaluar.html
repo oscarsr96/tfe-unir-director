@@ -94,6 +94,34 @@
         color: var(--accent2);
         margin-bottom: 0.75rem;
       }
+      .entrega-pills {
+        display: inline-flex;
+        gap: 0.25rem;
+        padding: 0.25rem;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        margin-bottom: 1rem;
+      }
+      .entrega-pill {
+        padding: 0.45rem 0.95rem;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        font-family: inherit;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border-radius: 7px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .entrega-pill:hover {
+        color: var(--text);
+      }
+      .entrega-pill.active {
+        background: var(--accent);
+        color: white;
+      }
       .upload-area {
         border: 2px dashed var(--border);
         border-radius: 12px;
@@ -494,15 +522,40 @@
       <a href="/" class="back">&larr; Volver a las gu&iacute;as</a>
       <h1>Autoevaluaci&oacute;n</h1>
       <p>
-        Sube tu primera entrega y obt&eacute;n feedback instant&aacute;neo
-        basado en la r&uacute;brica oficial del TFE.
+        Sube tu entrega y obt&eacute;n feedback instant&aacute;neo basado en la
+        r&uacute;brica oficial del TFE.
       </p>
     </div>
 
     <div class="container" id="mainContainer">
       <div class="step" id="uploadStep">
-        <div class="step-label">
-          Sube tu documento (Entrega 1 &mdash; PDF o Word)
+        <div class="step-label" id="stepLabel">
+          Sube tu documento (Entrega 2 &mdash; PDF o Word)
+        </div>
+        <div
+          class="entrega-pills"
+          id="entregaPills"
+          role="tablist"
+          aria-label="Selecciona la entrega"
+        >
+          <button
+            type="button"
+            class="entrega-pill"
+            data-tipo="entrega-1"
+            role="tab"
+            aria-selected="false"
+          >
+            Entrega 1
+          </button>
+          <button
+            type="button"
+            class="entrega-pill active"
+            data-tipo="entrega-2"
+            role="tab"
+            aria-selected="true"
+          >
+            Entrega 2
+          </button>
         </div>
         <div class="upload-area" id="uploadArea">
           <div class="upload-icon">&#128196;</div>
@@ -563,6 +616,31 @@
     <script>
       let fileData = null;
       let lastResult = null;
+      let selectedTipo = "entrega-2";
+
+      // Entrega selector pills
+      const ENTREGA_LABELS = {
+        "entrega-1": { num: 1, next: 2 },
+        "entrega-2": { num: 2, next: 3 },
+      };
+      const stepLabel = document.getElementById("stepLabel");
+      const entregaPills = document.getElementById("entregaPills");
+      entregaPills.addEventListener("click", (e) => {
+        const btn = e.target.closest(".entrega-pill");
+        if (!btn) return;
+        const tipo = btn.dataset.tipo;
+        if (!tipo || tipo === selectedTipo) return;
+        selectedTipo = tipo;
+        entregaPills.querySelectorAll(".entrega-pill").forEach((p) => {
+          const isActive = p.dataset.tipo === tipo;
+          p.classList.toggle("active", isActive);
+          p.setAttribute("aria-selected", String(isActive));
+        });
+        stepLabel.textContent =
+          "Sube tu documento (Entrega " +
+          ENTREGA_LABELS[tipo].num +
+          " — PDF o Word)";
+      });
 
       // File upload
       const fileInput = document.getElementById("fileInput");
@@ -719,9 +797,9 @@
           try {
             const body =
               fileData.kind === "docx"
-                ? { tipo: "entrega-1", fileText: fileData.text }
+                ? { tipo: selectedTipo, fileText: fileData.text }
                 : {
-                    tipo: "entrega-1",
+                    tipo: selectedTipo,
                     fileBase64: fileData.base64,
                     fileMediaType: fileData.mediaType,
                   };
@@ -841,7 +919,8 @@
 
         // Priorities
         if (d.prioridades?.length) {
-          html += `<div class="module open"><div class="module-header" onclick="this.parentElement.classList.toggle('open')"><span class="module-title">Prioridades para la Entrega 2</span><span class="module-chevron">&#9660;</span></div><div class="module-body"><ol class="prio-list">`;
+          const nextEntrega = ENTREGA_LABELS[selectedTipo].next;
+          html += `<div class="module open"><div class="module-header" onclick="this.parentElement.classList.toggle('open')"><span class="module-title">Prioridades para la Entrega ${nextEntrega}</span><span class="module-chevron">&#9660;</span></div><div class="module-body"><ol class="prio-list">`;
           d.prioridades.forEach((p) => {
             html += `<li class="prio-item"><span class="prio-num"></span><div>${esc(typeof p === "string" ? p : p.texto)}${p.ref ? `<br><span class="fb-ref">${esc(p.ref)}</span>` : ""}</div></li>`;
           });
@@ -948,7 +1027,10 @@
           await new Promise((resolve) => {
             window.pdfMake
               .createPdf(def)
-              .download("informe-entrega1.pdf", resolve);
+              .download(
+                "informe-entrega" + ENTREGA_LABELS[selectedTipo].num + ".pdf",
+                resolve,
+              );
           });
         } catch (err) {
           showError(
@@ -1379,7 +1461,9 @@
         const prioContent = [];
         if (d.prioridades && d.prioridades.length) {
           prioContent.push({
-            text: "Prioridades para la Entrega 2",
+            text:
+              "Prioridades para la Entrega " +
+              ENTREGA_LABELS[selectedTipo].next,
             fontSize: 13,
             bold: true,
             color: C.unir,
@@ -1476,9 +1560,14 @@
           pageMargins: [50, 60, 50, 56],
           defaultStyle: { fontSize: 10, color: C.body, lineHeight: 1.4 },
           info: {
-            title: "Informe de valoración — Entrega 1",
+            title:
+              "Informe de valoración — Entrega " +
+              ENTREGA_LABELS[selectedTipo].num,
             author: "UNIR · Máster en Inteligencia Artificial",
-            subject: "Informe de valoración del borrador inicial (Entrega 1)",
+            subject:
+              selectedTipo === "entrega-1"
+                ? "Informe de valoración del borrador inicial (Entrega 1)"
+                : "Informe de valoración del avance intermedio (Entrega 2)",
             creator: "UNIR · Máster en Inteligencia Artificial",
           },
           header: (currentPage) => {
@@ -1487,7 +1576,9 @@
               margin: [50, 24, 50, 0],
               columns: [
                 {
-                  text: "Informe de valoración · Entrega 1",
+                  text:
+                    "Informe de valoración · Entrega " +
+                    ENTREGA_LABELS[selectedTipo].num,
                   fontSize: 8,
                   color: C.muted,
                 },
